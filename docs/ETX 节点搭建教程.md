@@ -1,20 +1,52 @@
 
 ```
-安装包安装
-etx 下载地址：https://github.com/Ethereum-x/Ethereum-x-go/releases/download/etx-v1.0/etx-v1.0-stable-linux.zip
+ETX全节点机器配置：
+    最低配置:
+        CPU: 4 core
+        内存: 8G
+        硬盘: 100G 高速硬盘
+        网络: 2M
+    
+    推荐配置:
+        CPU: 8 core
+        内存: 16G
+        硬盘: 200G SSD (固态硬盘)
+        网络: 5M+
 
-解压
+        
+1.节点文件下载
+    etx 下载地址：wget https://github.com/Ethereum-x/Ethereum-x-go/releases/download/etx-v1.0/etx-v1.0-stable-linux.zip
+    
+2.创世文件下载：
+    wget https://github.com/Ethereum-x/Ethereum-x-go/blob/master/docs/etx-genesis.json
+    
+    保持etx 和 etx-genesis.json 在同一个目录
+    
+3.解压
+    unzip etx-v1.0-stable-linux.zip 
 
-tar -zxvf etx-v1.0-stable-linux.zip
+4.赋予getx可执行权限：
+    sudo chmod 777 getx
 
-进入解压目录，启动（命令解释，详情请见附录一）
-第一次运行getx, 需要使用创世文件：etx-genesis.json
-在命令行执行： ./getx  --datadir ~/etx/data  init etx-genesis.json 
+5.进入解压目录，启动（命令解释，详情请见附录一）
+    第一次运行getx, 需要使用创世文件：etx-genesis.json
+    在命令行执行： ./getx  --datadir ~/etx/data  init ./etx-genesis.json 
 
+6.启动节点，进入控制台模式：
+    ./getx  --rpc --datadir ~/etx/data --rpcport 8888 --networkid 66666 --port 61918 --rpcapi "personal,eth,net,web3" --rpccorsdomain "*"  --wsport 8588 --wsapi "personal,eth,net,web3" --wsorigins "*" console 
+    
+    这一步，不要加--mine指令，还没有挖矿账户，否则会报错。
+    
+7.生成挖矿地址，密码"12345", 可以修改为自己设定的
+    在控制台输入命令：personal.newAccount("12345") 
 
-执行完创世命令后，正常执行节点启动程序：
-./getx  --rpc --datadir ~/etx/data --rpcport 8888 --networkid 66666 --port 61918 --rpcapi "personal,eth,net,web3" --rpccorsdomain "*"  --wsport 8588 --wsapi "personal,eth,net,web3" --wsorigins "*" --mine --allow-insecure-unlock 
+8.正常执行节点启动程序,如果是后台运行，请使用挂起操作
+    如果要挖矿，请添加--mine指令。
+    控制台运行：
+    ./getx  --rpc --datadir ~/etx/data --rpcport 8888 --networkid 66666 --port 61918 --rpcapi "personal,eth,net,web3" --rpccorsdomain "*"  --wsport 8588 --wsapi "personal,eth,net,web3" --wsorigins "*" --mine 
 
+    后台挂起运行：
+    nohup ./getx  --rpc --datadir ~/etx/data --rpcport 8888 --networkid 66666 --port 61918 --rpcapi "personal,eth,net,web3" --rpccorsdomain "*"  --wsport 8588 --wsapi "personal,eth,net,web3" --wsorigins "*" --mine  >> getx.log &
 
 ETX 相关操作命令：
 eth：包含一些跟操作区块链相关的方法
@@ -187,15 +219,4 @@ WHISPER (EXPERIMENTAL) OPTIONS:
   --shh.pow value             可接受的最小的POW (默认值: 0.2)
 
 
-被弃用的选项
-DEPRECATED OPTIONS:
-  --fast   开启快速同步
-  --light   启用轻客户端模式
-
-
-帮助和版权
-MISC OPTIONS:
-  --help, -h  显示帮助
-COPYRIGHT:
-   Copyright 2013-2017 The go-ethereum Authors
 ```
