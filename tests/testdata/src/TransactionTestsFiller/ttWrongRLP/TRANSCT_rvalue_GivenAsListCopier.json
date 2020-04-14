@@ -2,6 +2,9 @@
     "TRANSCT_rvalue_GivenAsList" : {
 	"Byzantium" : {
         },
+        "Istanbul" : { },  
+        "ConstantinopleFix" : {
+        },
         "Constantinople" : {
         },
         "EIP150" : {

@@ -15,7 +15,7 @@
                     "gas" : -1,
                     "value" : -1
                 },
-                "network" : ["EIP150", "EIP158"],
+                "network" : [ ">=Istanbul"],
                 "result" : {
 		    "1000000000000000000000000000000000000118" : {
 		        "shouldnotexist" : "1"
@@ -23,24 +23,6 @@
 		    "b94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
 		        "storage" : {
 		            "0x01" : "0x08bf58"
-		        }
-		    } 
-                }
-            },
-	    {
-                "indexes" : {
-                    "data" : -1,
-                    "gas" : -1,
-                    "value" : -1
-                },
-                "network" : ["Frontier", "Homestead"],
-                "result" : {
-		    "1000000000000000000000000000000000000118" : {
-		        "shouldnotexist" : "1"
-		    },
-		    "b94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
-		        "storage" : {
-		            "0x01" : "0x08d574"
 		        }
 		    } 
                 }
@@ -58,7 +40,7 @@
 	    "b94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
                 "balance" : "0",
 		"nonce" : "0",
-		"code" : "check gas spent on suicide known contract on EIP150",
+		"// code" : "check gas spent on suicide known contract on EIP150",
 		"code" : "{ (CALL 60000 0x1000000000000000000000000000000000000118 0 0 0 0 0) [[1]] (GAS) }",
 		"storage": {
 		}
@@ -66,7 +48,7 @@
 	    "1000000000000000000000000000000000000118" : {
                 "balance" : "0",
 		"nonce" : "0",
-		"code" : "Suicide to existing account",
+		"// code" : "Suicide to existing account",
 		"code" : "{ (SELFDESTRUCT 0xb94f5374fce5edbc8e2a8697c15331677e6ebf0b) }",
 		"storage": {
 		}

@@ -2,6 +2,9 @@
     "RLPIncorrectByteEncoding01" : {
 	"Byzantium" : {
         },
+        "Istanbul" : { },  
+        "ConstantinopleFix" : {
+        },
         "Constantinople" : {
         },
         "EIP150" : {

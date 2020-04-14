@@ -2,6 +2,9 @@
     "RLPElementIsListWhenItShouldntBe2" : {
 	"Byzantium" : {
         },
+        "Istanbul" : { },  
+        "ConstantinopleFix" : {
+        },
         "Constantinople" : {
         },
         "EIP150" : {

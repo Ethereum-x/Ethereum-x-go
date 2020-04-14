@@ -15,7 +15,7 @@
                     "gas" : 1,
                     "value" : 0
                 },
-                "network" : ["Byzantium"],
+                "network" : [">=Istanbul"],
                 "result" : {
 		    "a94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
 		       "nonce" : "1"
@@ -34,10 +34,27 @@
 	    {
                 "indexes" : {
                     "data" : -1,
+                    "gas" : 0,
+                    "value" : -1
+                },
+                "network" : [">=Istanbul"],
+                "result" : {
+		    "a94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
+		       "nonce" : "1"
+		    },
+		    "1000000000000000000000000000000000000000" : {
+		        "storage" : {
+		        }
+		    }
+                }
+            },
+	    {
+                "indexes" : {
+                    "data" : -1,
                     "gas" : 1,
                     "value" : 1
                 },
-                "network" : ["Byzantium"],
+                "network" : [">=Istanbul"],
                 "result" : {
 		    "a94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
 		       "nonce" : "1"
@@ -67,7 +84,7 @@
 	    "1000000000000000000000000000000000000000" : {
                 "balance" : "0",
 		"nonce" : "0",
-		"code" : "check ORIGIN, CALLER, ADDRESS, CALLVALUE inside staticcall",
+		"// code" : "check ORIGIN, CALLER, ADDRESS, CALLVALUE inside staticcall",
 		"code" : "{ [[1]] (STATICCALL 100000 0x1000000000000000000000000000000000000001 0 0 0 0) [[2]] (STATICCALL 100000 0x1000000000000000000000000000000000000002 0 0 0 0) [[3]] (CALLER) [[4]] (CALLVALUE) [[5]] (ORIGIN) [[6]] (ADDRESS) }",
 		"storage": {
 		}
@@ -82,14 +99,14 @@
 	    "1000000000000000000000000000000000000002" : {
                 "balance" : "0",
 		"nonce" : "0",
-		"code" : "check ORIGIN, CALLER, ADDRESS, CALLVALUE inside staticcall",
+		"// code" : "check ORIGIN, CALLER, ADDRESS, CALLVALUE inside staticcall",
 		"code" : "{ (if (= 0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b (ORIGIN)) (MSTORE 1 1) (SSTORE 1 2) ) (if (= 0x1000000000000000000000000000000000000000 (CALLER)) (MSTORE 1 1) (SSTORE 1 2) ) (if (= 0x1000000000000000000000000000000000000002 (ADDRESS)) (MSTORE 1 1) (SSTORE 1 2) )   (if (= 0 (CALLVALUE)) (MSTORE 1 1) (SSTORE 1 2) ) }",
 		"storage": {
 		}
             }
         },
         "transaction" : {
-	    "data" : [
+	    "// data" : [
 		"0 - staticcall -> do smth | staticcall -> check | check "
 	    ],
             "data" : [

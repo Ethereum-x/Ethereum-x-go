@@ -2,6 +2,9 @@
     "TRANSCT_HeaderLargerThanRLP_0" : {
 		"Byzantium" : {
 		},
+        "Istanbul" : { },  
+        "ConstantinopleFix" : {
+        },
 		"Constantinople" : {
 		},
 		"EIP150" : {

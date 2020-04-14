@@ -25,6 +25,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	"github.com/ethereum/go-ethereum/trie"
 )
 
@@ -40,7 +41,7 @@ type testAccount struct {
 func makeTestState() (Database, common.Hash, []*testAccount) {
 	// Create an empty state
 	db := NewDatabase(rawdb.NewMemoryDatabase())
-	state, _ := New(common.Hash{}, db)
+	state, _ := New(common.Hash{}, db, nil)
 
 	// Fill it with some arbitrary data
 	accounts := []*testAccount{}
@@ -71,7 +72,7 @@ func makeTestState() (Database, common.Hash, []*testAccount) {
 // account array.
 func checkStateAccounts(t *testing.T, db ethdb.Database, root common.Hash, accounts []*testAccount) {
 	// Check root availability and state contents
-	state, err := New(root, NewDatabase(db))
+	state, err := New(root, NewDatabase(db), nil)
 	if err != nil {
 		t.Fatalf("failed to create state trie at %x: %v", root, err)
 	}
@@ -112,7 +113,7 @@ func checkStateConsistency(db ethdb.Database, root common.Hash) error {
 	if _, err := db.Get(root.Bytes()); err != nil {
 		return nil // Consider a non existent state consistent.
 	}
-	state, err := New(root, NewDatabase(db))
+	state, err := New(root, NewDatabase(db), nil)
 	if err != nil {
 		return err
 	}
@@ -125,7 +126,7 @@ func checkStateConsistency(db ethdb.Database, root common.Hash) error {
 // Tests that an empty state is not scheduled for syncing.
 func TestEmptyStateSync(t *testing.T) {
 	empty := common.HexToHash("56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421")
-	if req := NewStateSync(empty, rawdb.NewMemoryDatabase()).Missing(1); len(req) != 0 {
+	if req := NewStateSync(empty, rawdb.NewMemoryDatabase(), trie.NewSyncBloom(1, memorydb.New())).Missing(1); len(req) != 0 {
 		t.Errorf("content requested for empty state: %v", req)
 	}
 }
@@ -135,15 +136,15 @@ func TestEmptyStateSync(t *testing.T) {
 func TestIterativeStateSyncIndividual(t *testing.T) { testIterativeStateSync(t, 1) }
 func TestIterativeStateSyncBatched(t *testing.T)    { testIterativeStateSync(t, 100) }
 
-func testIterativeStateSync(t *testing.T, batch int) {
+func testIterativeStateSync(t *testing.T, count int) {
 	// Create a random state to copy
 	srcDb, srcRoot, srcAccounts := makeTestState()
 
 	// Create a destination state and sync with the scheduler
 	dstDb := rawdb.NewMemoryDatabase()
-	sched := NewStateSync(srcRoot, dstDb)
+	sched := NewStateSync(srcRoot, dstDb, trie.NewSyncBloom(1, dstDb))
 
-	queue := append([]common.Hash{}, sched.Missing(batch)...)
+	queue := append([]common.Hash{}, sched.Missing(count)...)
 	for len(queue) > 0 {
 		results := make([]trie.SyncResult, len(queue))
 		for i, hash := range queue {
@@ -156,10 +157,12 @@ func testIterativeStateSync(t *testing.T, batch int) {
 		if _, index, err := sched.Process(results); err != nil {
 			t.Fatalf("failed to process result #%d: %v", index, err)
 		}
-		if index, err := sched.Commit(dstDb); err != nil {
-			t.Fatalf("failed to commit data #%d: %v", index, err)
+		batch := dstDb.NewBatch()
+		if err := sched.Commit(batch); err != nil {
+			t.Fatalf("failed to commit data: %v", err)
 		}
-		queue = append(queue[:0], sched.Missing(batch)...)
+		batch.Write()
+		queue = append(queue[:0], sched.Missing(count)...)
 	}
 	// Cross check that the two states are in sync
 	checkStateAccounts(t, dstDb, srcRoot, srcAccounts)
@@ -173,7 +176,7 @@ func TestIterativeDelayedStateSync(t *testing.T) {
 
 	// Create a destination state and sync with the scheduler
 	dstDb := rawdb.NewMemoryDatabase()
-	sched := NewStateSync(srcRoot, dstDb)
+	sched := NewStateSync(srcRoot, dstDb, trie.NewSyncBloom(1, dstDb))
 
 	queue := append([]common.Hash{}, sched.Missing(0)...)
 	for len(queue) > 0 {
@@ -189,9 +192,11 @@ func TestIterativeDelayedStateSync(t *testing.T) {
 		if _, index, err := sched.Process(results); err != nil {
 			t.Fatalf("failed to process result #%d: %v", index, err)
 		}
-		if index, err := sched.Commit(dstDb); err != nil {
-			t.Fatalf("failed to commit data #%d: %v", index, err)
+		batch := dstDb.NewBatch()
+		if err := sched.Commit(batch); err != nil {
+			t.Fatalf("failed to commit data: %v", err)
 		}
+		batch.Write()
 		queue = append(queue[len(results):], sched.Missing(0)...)
 	}
 	// Cross check that the two states are in sync
@@ -204,16 +209,16 @@ func TestIterativeDelayedStateSync(t *testing.T) {
 func TestIterativeRandomStateSyncIndividual(t *testing.T) { testIterativeRandomStateSync(t, 1) }
 func TestIterativeRandomStateSyncBatched(t *testing.T)    { testIterativeRandomStateSync(t, 100) }
 
-func testIterativeRandomStateSync(t *testing.T, batch int) {
+func testIterativeRandomStateSync(t *testing.T, count int) {
 	// Create a random state to copy
 	srcDb, srcRoot, srcAccounts := makeTestState()
 
 	// Create a destination state and sync with the scheduler
 	dstDb := rawdb.NewMemoryDatabase()
-	sched := NewStateSync(srcRoot, dstDb)
+	sched := NewStateSync(srcRoot, dstDb, trie.NewSyncBloom(1, dstDb))
 
 	queue := make(map[common.Hash]struct{})
-	for _, hash := range sched.Missing(batch) {
+	for _, hash := range sched.Missing(count) {
 		queue[hash] = struct{}{}
 	}
 	for len(queue) > 0 {
@@ -230,11 +235,13 @@ func testIterativeRandomStateSync(t *testing.T, batch int) {
 		if _, index, err := sched.Process(results); err != nil {
 			t.Fatalf("failed to process result #%d: %v", index, err)
 		}
-		if index, err := sched.Commit(dstDb); err != nil {
-			t.Fatalf("failed to commit data #%d: %v", index, err)
+		batch := dstDb.NewBatch()
+		if err := sched.Commit(batch); err != nil {
+			t.Fatalf("failed to commit data: %v", err)
 		}
+		batch.Write()
 		queue = make(map[common.Hash]struct{})
-		for _, hash := range sched.Missing(batch) {
+		for _, hash := range sched.Missing(count) {
 			queue[hash] = struct{}{}
 		}
 	}
@@ -250,7 +257,7 @@ func TestIterativeRandomDelayedStateSync(t *testing.T) {
 
 	// Create a destination state and sync with the scheduler
 	dstDb := rawdb.NewMemoryDatabase()
-	sched := NewStateSync(srcRoot, dstDb)
+	sched := NewStateSync(srcRoot, dstDb, trie.NewSyncBloom(1, dstDb))
 
 	queue := make(map[common.Hash]struct{})
 	for _, hash := range sched.Missing(0) {
@@ -276,9 +283,11 @@ func TestIterativeRandomDelayedStateSync(t *testing.T) {
 		if _, index, err := sched.Process(results); err != nil {
 			t.Fatalf("failed to process result #%d: %v", index, err)
 		}
-		if index, err := sched.Commit(dstDb); err != nil {
-			t.Fatalf("failed to commit data #%d: %v", index, err)
+		batch := dstDb.NewBatch()
+		if err := sched.Commit(batch); err != nil {
+			t.Fatalf("failed to commit data: %v", err)
 		}
+		batch.Write()
 		for _, hash := range sched.Missing(0) {
 			queue[hash] = struct{}{}
 		}
@@ -297,7 +306,7 @@ func TestIncompleteStateSync(t *testing.T) {
 
 	// Create a destination state and sync with the scheduler
 	dstDb := rawdb.NewMemoryDatabase()
-	sched := NewStateSync(srcRoot, dstDb)
+	sched := NewStateSync(srcRoot, dstDb, trie.NewSyncBloom(1, dstDb))
 
 	added := []common.Hash{}
 	queue := append([]common.Hash{}, sched.Missing(1)...)
@@ -315,9 +324,11 @@ func TestIncompleteStateSync(t *testing.T) {
 		if _, index, err := sched.Process(results); err != nil {
 			t.Fatalf("failed to process result #%d: %v", index, err)
 		}
-		if index, err := sched.Commit(dstDb); err != nil {
-			t.Fatalf("failed to commit data #%d: %v", index, err)
+		batch := dstDb.NewBatch()
+		if err := sched.Commit(batch); err != nil {
+			t.Fatalf("failed to commit data: %v", err)
 		}
+		batch.Write()
 		for _, result := range results {
 			added = append(added, result.Hash)
 		}

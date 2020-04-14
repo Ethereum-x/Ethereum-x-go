@@ -3,7 +3,7 @@
         "env" : {
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x020000",
-	    "currentGasLimit" : "2^63-1",
+	    "// currentGasLimit" : "2^63-1",
             "currentGasLimit" : "0x7fffffffffffffff",
             "currentNumber" : "1",
             "currentTimestamp" : "1000",
@@ -16,7 +16,7 @@
                     "gas" : -1,
                     "value" : -1
                 },
-                "network" : ["ALL"],
+                "network" : [">=Istanbul"],
                 "result" : {
 	    	    "1000000000000000000000000000000000000000" : {
                 	"balance" : "100"

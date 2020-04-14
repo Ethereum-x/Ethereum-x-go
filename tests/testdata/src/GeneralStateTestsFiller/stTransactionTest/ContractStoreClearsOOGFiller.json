@@ -15,14 +15,14 @@
                     "gas" : -1,
                     "value" : -1
                 },
-                "network" : ["ALL"],
+                "network" : [">=Istanbul"],
                 "result" : {
                     "a94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
                         "nonce" : "1"
                     },
                     "d2571607e241ecf590ed94b12d87c94babe36db6" : {
                         "storage" : {
-                            "0x" : "0x0c",
+                            "0x00" : "0x0c",
                             "0x01" : "0x0c",
                             "0x02" : "0x0c",
                             "0x03" : "0x0c",

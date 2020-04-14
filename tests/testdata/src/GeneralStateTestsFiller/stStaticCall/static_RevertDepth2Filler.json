@@ -15,7 +15,7 @@
                     "gas" : -1,
                     "value" : -1
                 },
-                "network" : ["Byzantium"],
+                "network" : [ ">=Istanbul"],
                 "result" : {
 		    "a000000000000000000000000000000000000000" : {
 		        "storage" : {
@@ -87,7 +87,7 @@
             }
         },
         "transaction" : {
-	    "data" : "In transaction T to A, A call B call C, then A call D calls C, D fails after calling C.",
+	    "// data" : "In transaction T to A, A call B call C, then A call D calls C, D fails after calling C.",
             "data" : [
                 ""
             ],

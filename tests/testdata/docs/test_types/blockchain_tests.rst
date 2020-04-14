@@ -7,7 +7,7 @@ The blockchain tests aim is to test the basic verification of a blockchain.
 
 =================== ==============================================================
 Location            `/BlockchainTests <https://github.com/ethereum/tests/tree/develop/BlockchainTests>`_
-Supported Hardforks ``Byzantium`` | ``Constantinople`` | ``EIP150`` | ``EIP158`` | ``Frontier`` | ``Homestead``
+Supported Hardforks ``Istanbul`` | ``Byzantium`` | ``Constantinople`` | ``EIP150`` | ``EIP158`` | ``Frontier`` | ``Homestead``
 Status              Actively supported
 =================== ==============================================================
 
@@ -39,6 +39,8 @@ The client is expected to iterate through the list of blocks and ignore invalid 
 Test Structure
 --------------
 
+For a formal structure definition see also the related `JSON Schema <https://github.com/ethereum/tests/blob/develop/JSONSchema/bc-schema.json>`_ in the repo.
+
 ::
 
   {
@@ -63,31 +65,12 @@ Test Structure
        "lastblockhash": " ... ",
        "network": "Byzantium",
        "postState": { ... },
-       "pre": { ... }       
+       "pre": { ... },
+       "sealEngine": [ "NoProof" | "Ethash" ]      
      },
      "TESTNAME_EIP150": {
-       "blocks" : [
-         {
-           "blockHeader": { ... },
-           "rlp": { ... },
-           "transactions": { ... },
-           "uncleHeaders": { ... }
-         },
-         {
-           "blockHeader": { ... },
-           "rlp": { ... },
-           "transactions": { ... },
-           "uncleHeaders": { ... }
-         },
-         { ... }
-       ],
-       "genesisBlockHeader": { ... },
-       "genesisRLP": " ... ",
-       "lastblockhash": " ... ",
-       "network": "Byzantium",
-       "postState": { ... },
-       "pre": { ... }       
-     },
+       ...
+     }
      ...
   }
 
@@ -98,7 +81,8 @@ The Blocks Section
 The ``blocks`` section is a list of block objects, which have the following format:
 
 * ``rlp`` section contains the complete rlp of the new block as described in the 
-  yellow paper in section 4.3.3.
+  yellow paper in section 4.3.3. If the block is invalid the block section contain 
+  only this and optional `expectException` field.
 
 * ``blockHeader`` section  describes the block header of the new block in the same 
   format as described in `genesisBlockHeader`.
@@ -160,6 +144,19 @@ Pre and postState Sections
 
 * ``postState`` section: as described in :ref:`state_tests` (section - post).
 
+* ``postStateHash`` section: appears instead of ``postState`` when the state size is too large.
+
+Seal Engine
+^^^^^^^^^^^
+
+The ``sealEngine`` parameter (values: ``NoProof`` | ``Ethash``) defines the seal engine the
+test is generated with. For tests with a value ``NoProof`` you can skip block validation
+which will speed up test execution. Note that this also means that you cannot rely on
+``PoW`` specific block header values (``mixHash``, ``nonce``) for tests labelled this way.
+
+Currently this field is optional and there are still tests with no ``sealEngine`` parameter
+with the default here being the ``NoProof`` setting. So make sure to first check on parameter
+existence in your implementation.
 
 Optional BlockHeader Information
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -170,3 +167,5 @@ It is used to define a situation when you have 3 blocks already imported but the
 ``"chainname" = "string"`` This is used for defining forks in the same test. You could mine blocks to chain "A": 1, 2, 3 then to chain "B": 1, 2, 3, 4 (chainB becomes primary). Then again to chain "A": 4, 5, 6  (chainA becomes primary) and so on. chainname could also be defined in uncle header section. If defined in uncle header it tells on which chain's block uncle header would be populated from. When running test, this field could be used for information purpose only.
 
 ``"chainnetwork" = "string"`` Defines on which network rules this block was mined. (see the difference https://github.com/ethereum/EIPs/blob/master/EIPS/eip-2.mediawiki). When running test, this field could be used for information purpose only.
+
+``"expectException" = "string"`` A type of exception expected to be thrown when importing an invalid block. Optional.

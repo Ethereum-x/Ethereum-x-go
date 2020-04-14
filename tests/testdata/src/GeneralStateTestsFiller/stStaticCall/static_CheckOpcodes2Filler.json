@@ -12,10 +12,10 @@
             {
                 "indexes" : {
                     "data" : [0, 2, 3, 4],
-                    "gas" : 1,
+                    "gas" : -1,
                     "value" : -1
                 },
-                "network" : ["Byzantium"],
+                "network" : [">=Istanbul"],
                 "result" : {
 		    "a94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
 		       "nonce" : "1"
@@ -30,10 +30,10 @@
 	    {
                 "indexes" : {
                     "data" : 1,
-                    "gas" : 1,
+                    "gas" : -1,
                     "value" : -1
                 },
-                "network" : ["Byzantium"],
+                "network" : [">=Istanbul"],
                 "result" : {
 		    "a94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
 		       "nonce" : "1"
@@ -58,7 +58,7 @@
 	    "1000000000000000000000000000000000000000" : {
                 "balance" : "0",
 		"nonce" : "0",
-		"code" : "check ORIGIN, CALLER, ADDRESS, CALLVALUE inside staticcall",
+		"// code" : "check ORIGIN, CALLER, ADDRESS, CALLVALUE inside staticcall",
 		"code" : "{ [[1]] (STATICCALL 100000 (CALLDATALOAD 0) 0 0 0 0) }",
 		"storage": {
 		}
@@ -135,7 +135,7 @@
             }
         },
         "transaction" : {
-	    "data" : [
+	    "// data" : [
 		"10 - staticcall -> call -> check",
 		"20 - staticcall -> call with value (oogs here because call has value) -> check",
 		"30 - staticcall -> callcode -> check",

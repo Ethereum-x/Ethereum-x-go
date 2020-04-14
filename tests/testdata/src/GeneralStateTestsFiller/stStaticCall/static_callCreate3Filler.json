@@ -11,13 +11,13 @@
         "expect" : [
             {
                 "indexes" : { "data" : 0, "gas" : -1, "value" : -1 },
-                "network" : ["Byzantium"],
+                "network" : [">=Istanbul"],
                 "result" : {
                     "1000000000000000000000000000000000000000" : {
                         "storage" : {
-			    "0x00" : "0x13136008b64ff592819b2fa6d43f2835c452020e",
+						    "0x00" : "0x13136008b64ff592819b2fa6d43f2835c452020e",
                             "0x01" : "0x01",
-			    "0x02" : "0x07a52c"
+						    "0x02" : "0x07a2d4"
                         }
                     }
                 }
@@ -33,8 +33,8 @@
             },
             "1000000000000000000000000000000000000000" : {
                 "balance" : "1000000000000000000",
-		"code" : "{ (STATICCALL 100000 (ADDRESS) 0 0 0 0) } ",
-		"code" : "{  (MSTORE 0 0x600060006000600030620186a0fa) (RETURN 18 14) }",
+		"//0 code" : "{ (STATICCALL 100000 (ADDRESS) 0 0 0 0) } ",
+		"//1 code" : "{  (MSTORE 0 0x600060006000600030620186a0fa) (RETURN 18 14) }",
                 "code" : "{  (MSTORE 0 0x6d600060006000600030620186a0fa600052600e6012f3) [[ 0 ]] (CREATE 1 9 23)  [[ 1 ]] (STATICCALL 30000 (SLOAD 0) 0 0 0 0) [[ 2 ]] (GAS) }",
                 "nonce" : "0",
                 "storage" : {

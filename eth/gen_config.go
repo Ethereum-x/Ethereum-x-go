@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/eth/downloader"
 	"github.com/ethereum/go-ethereum/eth/gasprice"
 	"github.com/ethereum/go-ethereum/miner"
+	"github.com/ethereum/go-ethereum/params"
 )
 
 // MarshalTOML marshals as TOML.
@@ -20,18 +21,21 @@ func (c Config) MarshalTOML() (interface{}, error) {
 		Genesis                 *core.Genesis `toml:",omitempty"`
 		NetworkId               uint64
 		SyncMode                downloader.SyncMode
+		DiscoveryURLs           []string
 		NoPruning               bool
 		NoPrefetch              bool
 		Whitelist               map[uint64]common.Hash `toml:"-"`
 		LightServ               int                    `toml:",omitempty"`
-		LightBandwidthIn        int                    `toml:",omitempty"`
-		LightBandwidthOut       int                    `toml:",omitempty"`
+		LightIngress            int                    `toml:",omitempty"`
+		LightEgress             int                    `toml:",omitempty"`
 		LightPeers              int                    `toml:",omitempty"`
-		OnlyAnnounce            bool
-		ULC                     *ULCConfig `toml:",omitempty"`
-		SkipBcVersionCheck      bool       `toml:"-"`
-		DatabaseHandles         int        `toml:"-"`
+		UltraLightServers       []string               `toml:",omitempty"`
+		UltraLightFraction      int                    `toml:",omitempty"`
+		UltraLightOnlyAnnounce  bool                   `toml:",omitempty"`
+		SkipBcVersionCheck      bool                   `toml:"-"`
+		DatabaseHandles         int                    `toml:"-"`
 		DatabaseCache           int
+		DatabaseFreezer         string
 		TrieCleanCache          int
 		TrieDirtyCache          int
 		TrieTimeout             time.Duration
@@ -43,25 +47,31 @@ func (c Config) MarshalTOML() (interface{}, error) {
 		DocRoot                 string `toml:"-"`
 		EWASMInterpreter        string
 		EVMInterpreter          string
-		ConstantinopleOverride  *big.Int
-		RPCGasCap               *big.Int `toml:",omitempty"`
+		RPCGasCap               *big.Int                       `toml:",omitempty"`
+		Checkpoint              *params.TrustedCheckpoint      `toml:",omitempty"`
+		CheckpointOracle        *params.CheckpointOracleConfig `toml:",omitempty"`
+		OverrideIstanbul        *big.Int                       `toml:",omitempty"`
+		OverrideMuirGlacier     *big.Int                       `toml:",omitempty"`
 	}
 	var enc Config
 	enc.Genesis = c.Genesis
 	enc.NetworkId = c.NetworkId
 	enc.SyncMode = c.SyncMode
+	enc.DiscoveryURLs = c.DiscoveryURLs
 	enc.NoPruning = c.NoPruning
 	enc.NoPrefetch = c.NoPrefetch
 	enc.Whitelist = c.Whitelist
 	enc.LightServ = c.LightServ
-	enc.LightBandwidthIn = c.LightBandwidthIn
-	enc.LightBandwidthOut = c.LightBandwidthOut
+	enc.LightIngress = c.LightIngress
+	enc.LightEgress = c.LightEgress
 	enc.LightPeers = c.LightPeers
-	enc.OnlyAnnounce = c.OnlyAnnounce
-	enc.ULC = c.ULC
+	enc.UltraLightServers = c.UltraLightServers
+	enc.UltraLightFraction = c.UltraLightFraction
+	enc.UltraLightOnlyAnnounce = c.UltraLightOnlyAnnounce
 	enc.SkipBcVersionCheck = c.SkipBcVersionCheck
 	enc.DatabaseHandles = c.DatabaseHandles
 	enc.DatabaseCache = c.DatabaseCache
+	enc.DatabaseFreezer = c.DatabaseFreezer
 	enc.TrieCleanCache = c.TrieCleanCache
 	enc.TrieDirtyCache = c.TrieDirtyCache
 	enc.TrieTimeout = c.TrieTimeout
@@ -73,8 +83,11 @@ func (c Config) MarshalTOML() (interface{}, error) {
 	enc.DocRoot = c.DocRoot
 	enc.EWASMInterpreter = c.EWASMInterpreter
 	enc.EVMInterpreter = c.EVMInterpreter
-	enc.ConstantinopleOverride = c.ConstantinopleOverride
 	enc.RPCGasCap = c.RPCGasCap
+	enc.Checkpoint = c.Checkpoint
+	enc.CheckpointOracle = c.CheckpointOracle
+	enc.OverrideIstanbul = c.OverrideIstanbul
+	enc.OverrideMuirGlacier = c.OverrideMuirGlacier
 	return &enc, nil
 }
 
@@ -84,18 +97,21 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 		Genesis                 *core.Genesis `toml:",omitempty"`
 		NetworkId               *uint64
 		SyncMode                *downloader.SyncMode
+		DiscoveryURLs           []string
 		NoPruning               *bool
 		NoPrefetch              *bool
 		Whitelist               map[uint64]common.Hash `toml:"-"`
 		LightServ               *int                   `toml:",omitempty"`
-		LightBandwidthIn        *int                   `toml:",omitempty"`
-		LightBandwidthOut       *int                   `toml:",omitempty"`
+		LightIngress            *int                   `toml:",omitempty"`
+		LightEgress             *int                   `toml:",omitempty"`
 		LightPeers              *int                   `toml:",omitempty"`
-		OnlyAnnounce            *bool
-		ULC                     *ULCConfig `toml:",omitempty"`
-		SkipBcVersionCheck      *bool      `toml:"-"`
-		DatabaseHandles         *int       `toml:"-"`
+		UltraLightServers       []string               `toml:",omitempty"`
+		UltraLightFraction      *int                   `toml:",omitempty"`
+		UltraLightOnlyAnnounce  *bool                  `toml:",omitempty"`
+		SkipBcVersionCheck      *bool                  `toml:"-"`
+		DatabaseHandles         *int                   `toml:"-"`
 		DatabaseCache           *int
+		DatabaseFreezer         *string
 		TrieCleanCache          *int
 		TrieDirtyCache          *int
 		TrieTimeout             *time.Duration
@@ -107,8 +123,11 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 		DocRoot                 *string `toml:"-"`
 		EWASMInterpreter        *string
 		EVMInterpreter          *string
-		ConstantinopleOverride  *big.Int
-		RPCGasCap               *big.Int `toml:",omitempty"`
+		RPCGasCap               *big.Int                       `toml:",omitempty"`
+		Checkpoint              *params.TrustedCheckpoint      `toml:",omitempty"`
+		CheckpointOracle        *params.CheckpointOracleConfig `toml:",omitempty"`
+		OverrideIstanbul        *big.Int                       `toml:",omitempty"`
+		OverrideMuirGlacier     *big.Int                       `toml:",omitempty"`
 	}
 	var dec Config
 	if err := unmarshal(&dec); err != nil {
@@ -123,6 +142,9 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 	if dec.SyncMode != nil {
 		c.SyncMode = *dec.SyncMode
 	}
+	if dec.DiscoveryURLs != nil {
+		c.DiscoveryURLs = dec.DiscoveryURLs
+	}
 	if dec.NoPruning != nil {
 		c.NoPruning = *dec.NoPruning
 	}
@@ -135,20 +157,23 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 	if dec.LightServ != nil {
 		c.LightServ = *dec.LightServ
 	}
-	if dec.LightBandwidthIn != nil {
-		c.LightBandwidthIn = *dec.LightBandwidthIn
+	if dec.LightIngress != nil {
+		c.LightIngress = *dec.LightIngress
 	}
-	if dec.LightBandwidthOut != nil {
-		c.LightBandwidthOut = *dec.LightBandwidthOut
+	if dec.LightEgress != nil {
+		c.LightEgress = *dec.LightEgress
 	}
 	if dec.LightPeers != nil {
 		c.LightPeers = *dec.LightPeers
 	}
-	if dec.OnlyAnnounce != nil {
-		c.OnlyAnnounce = *dec.OnlyAnnounce
+	if dec.UltraLightServers != nil {
+		c.UltraLightServers = dec.UltraLightServers
 	}
-	if dec.ULC != nil {
-		c.ULC = dec.ULC
+	if dec.UltraLightFraction != nil {
+		c.UltraLightFraction = *dec.UltraLightFraction
+	}
+	if dec.UltraLightOnlyAnnounce != nil {
+		c.UltraLightOnlyAnnounce = *dec.UltraLightOnlyAnnounce
 	}
 	if dec.SkipBcVersionCheck != nil {
 		c.SkipBcVersionCheck = *dec.SkipBcVersionCheck
@@ -158,6 +183,9 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 	}
 	if dec.DatabaseCache != nil {
 		c.DatabaseCache = *dec.DatabaseCache
+	}
+	if dec.DatabaseFreezer != nil {
+		c.DatabaseFreezer = *dec.DatabaseFreezer
 	}
 	if dec.TrieCleanCache != nil {
 		c.TrieCleanCache = *dec.TrieCleanCache
@@ -192,11 +220,20 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 	if dec.EVMInterpreter != nil {
 		c.EVMInterpreter = *dec.EVMInterpreter
 	}
-	if dec.ConstantinopleOverride != nil {
-		c.ConstantinopleOverride = dec.ConstantinopleOverride
-	}
 	if dec.RPCGasCap != nil {
 		c.RPCGasCap = dec.RPCGasCap
+	}
+	if dec.Checkpoint != nil {
+		c.Checkpoint = dec.Checkpoint
+	}
+	if dec.CheckpointOracle != nil {
+		c.CheckpointOracle = dec.CheckpointOracle
+	}
+	if dec.OverrideIstanbul != nil {
+		c.OverrideIstanbul = dec.OverrideIstanbul
+	}
+	if dec.OverrideMuirGlacier != nil {
+		c.OverrideMuirGlacier = dec.OverrideMuirGlacier
 	}
 	return nil
 }

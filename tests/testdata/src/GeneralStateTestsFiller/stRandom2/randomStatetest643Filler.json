@@ -1,7 +1,7 @@
 {
     "randomStatetest643" : {
 	"_info" : {
-            "comment" : "Return ~1 MB out of bounds of the init code. shouls throw codesize error after EIP158 and create empty account before EIP158"
+            "comment" : "Return ~1 MB out of bounds of the init code. should throw codesize error after EIP158 and create empty account before EIP158"
         },
 	"env" : {
 		"currentCoinbase":"0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b",
@@ -11,6 +11,35 @@
 		"currentTimestamp":"0x03e8",
 		"previousHash":"0xe9ca77b3bc9ef7c883808b725f1e408fc555d3058c4f87e81d135733454dbda4"
 	},
+	"expect": 
+	[
+	    {
+                "indexes" : {
+                    "data" : -1,
+                    "gas" : -1,
+                    "value" : -1
+                },
+                "network" : [">=Istanbul"],
+                "result" : {
+                    "0x1000000000000000000000000000000000000000" : {
+                            "nonce" : "0xd2",
+                            "storage" : {
+                            }
+                        },
+                        "0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
+                            "code" : "",
+                            "nonce" : "0x01",
+                            "storage" : {
+                            }
+                        },
+                        "0xc94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
+                            "nonce" : "0xf3",
+                            "storage" : {
+                            }
+                        }
+                }
+            }
+	],
 	"pre" : {
 		"0x1000000000000000000000000000000000000000" : {
 			"balance":"0x3f91b25c1601534b",

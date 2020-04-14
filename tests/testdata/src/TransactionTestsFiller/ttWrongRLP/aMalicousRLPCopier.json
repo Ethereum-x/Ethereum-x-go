@@ -1,7 +1,10 @@
 {
     "aMalicousRLP" : {
-	"Byzantium" : {
+	    "Byzantium" : {
         },
+        "Istanbul" : { },  
+        "ConstantinopleFix" : {
+        }, 
         "Constantinople" : {
         },
         "EIP150" : {

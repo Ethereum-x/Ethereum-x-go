@@ -12,26 +12,10 @@
 	    {
                 "indexes" : {
                     "data" : -1,
-                    "gas" : -1,
-                    "value" : -1
-                },
-                "network" : ["Frontier", "Homestead", "EIP150", "EIP158"],
-                "result" : {
-		    "f1ecf98489fa9ed60a664fc4998db699cfa39d40" : {
-		        "shouldnotexist" : "1"
-		    },
-		    "b94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
-			"nonce" : "0"
-		     }
-                }
-            },
-	    {
-                "indexes" : {
-                    "data" : -1,
                     "gas" : 0,
                     "value" : -1
                 },
-                "network" : ["Byzantium"],
+                "network" : [">=Istanbul"],
                 "result" : {
 		    "f1ecf98489fa9ed60a664fc4998db699cfa39d40" : {
 		        "shouldnotexist" : "1"
@@ -51,7 +35,7 @@
                     "gas" : 1,
                     "value" : -1
                 },
-                "network" : ["Byzantium"],
+                "network" : [">=Istanbul"],
                 "result" : {
 		    "f1ecf98489fa9ed60a664fc4998db699cfa39d40" : {
 		        "shouldnotexist" : "1"
@@ -73,7 +57,7 @@
             },
 	    "b94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
                 "balance" : "1",
-		"code" : "{ [[0]] 1 (REVERT 0 1) [[1]] 12 }",
+		"// code" : "{ [[0]] 1 (REVERT 0 1) [[1]] 12 }",
                 "code" : "{ (MSTORE 0 0x600160005560016000fd6011600155 ) [[1]](CREATE 1 17 15) [[0]] 12 }",
                 "nonce" : "0",
                 "storage" : {

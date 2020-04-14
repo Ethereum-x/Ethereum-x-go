@@ -24,9 +24,8 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/crypto"
+	lpc "github.com/ethereum/go-ethereum/les/lespay/client"
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/ethereum/go-ethereum/rlp"
 )
@@ -34,17 +33,18 @@ import (
 // Constants to match up protocol versions and messages
 const (
 	lpv2 = 2
+	lpv3 = 3
 )
 
 // Supported versions of the les protocol (first is primary)
 var (
-	ClientProtocolVersions    = []uint{lpv2}
-	ServerProtocolVersions    = []uint{lpv2}
+	ClientProtocolVersions    = []uint{lpv2, lpv3}
+	ServerProtocolVersions    = []uint{lpv2, lpv3}
 	AdvertiseProtocolVersions = []uint{lpv2} // clients are searching for the first advertised protocol in the list
 )
 
 // Number of implemented message corresponding to different protocol versions.
-var ProtocolLengths = map[uint]uint64{lpv2: 22}
+var ProtocolLengths = map[uint]uint64{lpv2: 22, lpv3: 24}
 
 const (
 	NetworkId          = 1
@@ -72,22 +72,65 @@ const (
 	SendTxV2Msg            = 0x13
 	GetTxStatusMsg         = 0x14
 	TxStatusMsg            = 0x15
+	// Protocol messages introduced in LPV3
+	StopMsg   = 0x16
+	ResumeMsg = 0x17
 )
 
 type requestInfo struct {
-	name     string
-	maxCount uint64
+	name                          string
+	maxCount                      uint64
+	refBasketFirst, refBasketRest float64
 }
 
-var requests = map[uint64]requestInfo{
-	GetBlockHeadersMsg:     {"GetBlockHeaders", MaxHeaderFetch},
-	GetBlockBodiesMsg:      {"GetBlockBodies", MaxBodyFetch},
-	GetReceiptsMsg:         {"GetReceipts", MaxReceiptFetch},
-	GetCodeMsg:             {"GetCode", MaxCodeFetch},
-	GetProofsV2Msg:         {"GetProofsV2", MaxProofsFetch},
-	GetHelperTrieProofsMsg: {"GetHelperTrieProofs", MaxHelperTrieProofsFetch},
-	SendTxV2Msg:            {"SendTxV2", MaxTxSend},
-	GetTxStatusMsg:         {"GetTxStatus", MaxTxStatus},
+// reqMapping maps an LES request to one or two lespay service vector entries.
+// If rest != -1 and the request type is used with amounts larger than one then the
+// first one of the multi-request is mapped to first while the rest is mapped to rest.
+type reqMapping struct {
+	first, rest int
+}
+
+var (
+	// requests describes the available LES request types and their initializing amounts
+	// in the lespay/client.ValueTracker reference basket. Initial values are estimates
+	// based on the same values as the server's default cost estimates (reqAvgTimeCost).
+	requests = map[uint64]requestInfo{
+		GetBlockHeadersMsg:     {"GetBlockHeaders", MaxHeaderFetch, 10, 1000},
+		GetBlockBodiesMsg:      {"GetBlockBodies", MaxBodyFetch, 1, 0},
+		GetReceiptsMsg:         {"GetReceipts", MaxReceiptFetch, 1, 0},
+		GetCodeMsg:             {"GetCode", MaxCodeFetch, 1, 0},
+		GetProofsV2Msg:         {"GetProofsV2", MaxProofsFetch, 10, 0},
+		GetHelperTrieProofsMsg: {"GetHelperTrieProofs", MaxHelperTrieProofsFetch, 10, 100},
+		SendTxV2Msg:            {"SendTxV2", MaxTxSend, 1, 0},
+		GetTxStatusMsg:         {"GetTxStatus", MaxTxStatus, 10, 0},
+	}
+	requestList    []lpc.RequestInfo
+	requestMapping map[uint32]reqMapping
+)
+
+// init creates a request list and mapping between protocol message codes and lespay
+// service vector indices.
+func init() {
+	requestMapping = make(map[uint32]reqMapping)
+	for code, req := range requests {
+		cost := reqAvgTimeCost[code]
+		rm := reqMapping{len(requestList), -1}
+		requestList = append(requestList, lpc.RequestInfo{
+			Name:       req.name + ".first",
+			InitAmount: req.refBasketFirst,
+			InitValue:  float64(cost.baseCost + cost.reqCost),
+		})
+		if req.refBasketRest != 0 {
+			rm.rest = len(requestList)
+			requestList = append(requestList, lpc.RequestInfo{
+				Name:       req.name + ".rest",
+				InitAmount: req.refBasketRest,
+				InitValue:  float64(cost.reqCost),
+			})
+		}
+		requestMapping[uint32(code)] = rm
+	}
+
 }
 
 type errCode int
@@ -145,6 +188,14 @@ type announceData struct {
 	Td         *big.Int    // Total difficulty of one particular block being announced
 	ReorgDepth uint64
 	Update     keyValueList
+}
+
+// sanityCheck verifies that the values are reasonable, as a DoS protection
+func (a *announceData) sanityCheck() error {
+	if tdlen := a.Td.BitLen(); tdlen > 100 {
+		return fmt.Errorf("too large block TD: bitlen %d", tdlen)
+	}
+	return nil
 }
 
 // sign adds a signature to the block announcement by the given privKey
@@ -224,12 +275,4 @@ func (hn *hashOrNumber) DecodeRLP(s *rlp.Stream) error {
 // CodeData is the network response packet for a node data retrieval.
 type CodeData []struct {
 	Value []byte
-}
-
-type proofsData [][]rlp.RawValue
-
-type txStatus struct {
-	Status core.TxStatus
-	Lookup *rawdb.LegacyTxLookupEntry `rlp:"nil"`
-	Error  string
 }

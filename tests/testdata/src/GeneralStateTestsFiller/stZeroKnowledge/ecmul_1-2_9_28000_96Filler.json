@@ -137,7 +137,7 @@
                 "0x30c8d1da00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000009"
             ],
             "gasLimit": [
-                "0xc438", "90000", "110000", "200000"
+                "0x8738", "90000", "110000", "200000"
             ],
             "gasPrice": "0x1",
             "nonce": "0x8e",
@@ -155,7 +155,7 @@
                     "value": 0
                 },
                 "network": [
-                    "Byzantium"
+                    ">=Istanbul"
                 ],
                 "result": {
                     "24143873e0e0815fdcbcffdbe09c979cbf9ad013": {
@@ -179,6 +179,137 @@
                     "c305c901078781c232a2a521c2af7980f8385ee9": {
                         "storage": {
                             "0x00": "0xad3228b676f7d3cd4284a5443f17f1962b36e491b30a40b2405849e597ba5fb5"
+                        },
+                        "nonce": "1",
+                        "balance": "0"
+                    },
+                    "0000000000000000000000000000000000000005": {
+                        "storage": {},
+                        "nonce": "0",
+                        "balance": "1",
+                        "code": "0x"
+                    },
+                    "13cbb8d99c6c4e0f2728c7d72606e78a29c4e224": {
+                        "storage": {},
+                        "nonce": "0",
+                        "balance": "1000000000000000000",
+                        "code": "0x"
+                    },
+                    "0000000000000000000000000000000000000000": {
+                        "storage": {},
+                        "nonce": "0",
+                        "balance": "1",
+                        "code": "0x"
+                    },
+                    "0000000000000000000000000000000000000003": {
+                        "storage": {},
+                        "nonce": "0",
+                        "balance": "1",
+                        "code": "0x"
+                    },
+                    "82a978b3f5962a5b0957d9ee9eef472ee55b42f1": {
+                        "storage": {},
+                        "nonce": "143",
+                        "code": "0x"
+                    },
+                    "0000000000000000000000000000000000000006": {
+                        "storage": {},
+                        "nonce": "0",
+                        "balance": "1",
+                        "code": "0x"
+                    },
+                    "0000000000000000000000000000000000000007": {
+                        "storage": {},
+                        "nonce": "0",
+                        "balance": "1",
+                        "code": "0x"
+                    },
+                    "598443f1880ef585b21f1d7585bd0577402861e5": {
+                        "storage": {},
+                        "nonce": "0",
+                        "balance": "1000000000000000000",
+                        "code": "0x"
+                    },
+                    "7d577a597b2742b498cb5cf0c26cdcd726d39e6e": {
+                        "storage": {},
+                        "nonce": "0",
+                        "balance": "1000000000000000000",
+                        "code": "0x"
+                    },
+                    "0000000000000000000000000000000000000004": {
+                        "storage": {},
+                        "nonce": "0",
+                        "balance": "1",
+                        "code": "0x"
+                    },
+                    "e0fc04fa2d34a66b779fd5cee748268032a146c0": {
+                        "storage": {},
+                        "nonce": "0",
+                        "balance": "1000000000000000000",
+                        "code": "0x"
+                    },
+                    "3535353535353535353535353535353535353535": {
+                        "storage": {},
+                        "nonce": "0",
+                        "code": "0x"
+                    },
+                    "0000000000000000000000000000000000000002": {
+                        "storage": {},
+                        "nonce": "0",
+                        "balance": "1",
+                        "code": "0x"
+                    },
+                    "77db2bebba79db42a978f896968f4afce746ea1f": {
+                        "storage": {},
+                        "nonce": "0",
+                        "balance": "1000000000000000000",
+                        "code": "0x"
+                    },
+                    "10a1c1cb95c92ec31d3f22c66eef1d9f3f258c6b": {
+                        "storage": {},
+                        "nonce": "0",
+                        "balance": "1000000000000000000",
+                        "code": "0x"
+                    },
+                    "90f0b1ebbba1c1936aff7aaf20a7878ff9e04b6c": {
+                        "storage": {},
+                        "nonce": "0",
+                        "balance": "1000000000000000000",
+                        "code": "0x"
+                    }
+                }
+            },
+	    {
+                "indexes": {
+                    "data": 0,
+                    "gas": [1,2,3],
+                    "value": 0
+                },
+                "network": [
+                    ">=Istanbul"
+                ],
+                "result": {
+                    "24143873e0e0815fdcbcffdbe09c979cbf9ad013": {
+                        "storage": {},
+                        "nonce": "0",
+                        "balance": "1000000000000000000",
+                        "code": "0x"
+                    },
+                    "0000000000000000000000000000000000000001": {
+                        "storage": {},
+                        "nonce": "0",
+                        "balance": "1",
+                        "code": "0x"
+                    },
+                    "dceceaf3fc5c0a63d195d69b1a90011b7b19650d": {
+                        "storage": {},
+                        "nonce": "0",
+                        "balance": "1000000000000000000",
+                        "code": "0x"
+                    },
+                    "c305c901078781c232a2a521c2af7980f8385ee9": {
+                        "storage": {
+                            "0x00": "0xc7b29565a7dd9915e6fd86d026aef2fc454506bae7f90e2f2bec5f25f01b2d95"
                         },
                         "nonce": "1",
                         "balance": "0",
@@ -252,7 +383,6 @@
                     "3535353535353535353535353535353535353535": {
                         "storage": {},
                         "nonce": "0",
-                        "balance": "6223331",
                         "code": "0x"
                     },
                     "0000000000000000000000000000000000000002": {
@@ -282,6 +412,8 @@
                 }
             }
         ],
-        "explanation": "Puts the point (1, 2) and the factor 9 into the ECMUL precompile, truncating or expanding the input data to 96 bytes. Gives the execution 28000 bytes"
+        "_info": { 
+            "comment": "Puts the point (1, 2) and the factor 9 into the ECMUL precompile, truncating or expanding the input data to 96 bytes. Gives the execution 28000 bytes"
+        }
     }
 }

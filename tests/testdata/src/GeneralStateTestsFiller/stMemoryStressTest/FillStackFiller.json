@@ -12,10 +12,10 @@
             {
                 "indexes" : {
                     "data" : -1,
-                    "gas" : 1,
+                    "gas" : 0,
                     "value" : -1
                 },
-                "network" : "Frontier",
+                "network" : [">=Istanbul"],
                 "result" : {
                     "095e7baea6a6c7c4c2dfeb977efac326af552d87" : {
                         "balance" : "0x00",
@@ -25,7 +25,7 @@
                         }
                     },
                     "945304eb96065b2a98b57a48a06ae28d285a71b5" : {
-                        "balance" : "250000046",
+                        "balance" : "3141638",
                         "code" : "0x6000355415600957005b60203560003555",
                         "nonce" : "0x00",
                         "storage" : {
@@ -45,7 +45,7 @@
                     "gas" : 1,
                     "value" : -1
                 },
-                "network" : ["Homestead", "EIP150", "EIP158"],
+                "network" : [">=Istanbul"],
                 "result" : {
                     "095e7baea6a6c7c4c2dfeb977efac326af552d87" : {
                         "balance" : "0x00",

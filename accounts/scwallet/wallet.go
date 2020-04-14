@@ -27,6 +27,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -37,7 +38,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/crypto/secp256k1"
 	"github.com/ethereum/go-ethereum/log"
 	pcsc "github.com/gballet/go-libpcsclite"
 	"github.com/status-im/keycard-go/derivationpath"
@@ -167,7 +167,7 @@ func transmit(card *pcsc.Card, command *commandAPDU) (*responseAPDU, error) {
 	}
 
 	if response.Sw1 != sw1Ok {
-		return nil, fmt.Errorf("Unexpected insecure response status Cla=0x%x, Ins=0x%x, Sw=0x%x%x", command.Cla, command.Ins, response.Sw1, response.Sw2)
+		return nil, fmt.Errorf("unexpected insecure response status Cla=0x%x, Ins=0x%x, Sw=0x%x%x", command.Cla, command.Ins, response.Sw1, response.Sw2)
 	}
 
 	return response, nil
@@ -252,7 +252,7 @@ func (w *Wallet) release() error {
 // with the wallet.
 func (w *Wallet) pair(puk []byte) error {
 	if w.session.paired() {
-		return fmt.Errorf("Wallet already paired")
+		return fmt.Errorf("wallet already paired")
 	}
 	pairing, err := w.session.pair(puk)
 	if err != nil {
@@ -311,14 +311,16 @@ func (w *Wallet) Status() (string, error) {
 		return fmt.Sprintf("Failed: %v", err), err
 	}
 	switch {
+	case !w.session.verified && status.PinRetryCount == 0 && status.PukRetryCount == 0:
+		return "Bricked, waiting for full wipe", nil
 	case !w.session.verified && status.PinRetryCount == 0:
-		return fmt.Sprintf("Blocked, waiting for PUK and new PIN"), nil
+		return fmt.Sprintf("Blocked, waiting for PUK (%d attempts left) and new PIN", status.PukRetryCount), nil
 	case !w.session.verified:
 		return fmt.Sprintf("Locked, waiting for PIN (%d attempts left)", status.PinRetryCount), nil
 	case !status.Initialized:
-		return fmt.Sprintf("Empty, waiting for initialization"), nil
+		return "Empty, waiting for initialization", nil
 	default:
-		return fmt.Sprintf("Online"), nil
+		return "Online", nil
 	}
 }
 
@@ -378,10 +380,18 @@ func (w *Wallet) Open(passphrase string) error {
 	case passphrase == "":
 		return ErrPINUnblockNeeded
 	case status.PinRetryCount > 0:
+		if !regexp.MustCompile(`^[0-9]{6,}$`).MatchString(passphrase) {
+			w.log.Error("PIN needs to be at least 6 digits")
+			return ErrPINNeeded
+		}
 		if err := w.session.verifyPin([]byte(passphrase)); err != nil {
 			return err
 		}
 	default:
+		if !regexp.MustCompile(`^[0-9]{12,}$`).MatchString(passphrase) {
+			w.log.Error("PUK needs to be at least 12 digits")
+			return ErrPINUnblockNeeded
+		}
 		if err := w.session.unblockPin([]byte(passphrase)); err != nil {
 			return err
 		}
@@ -763,12 +773,12 @@ func (w *Wallet) findAccountPath(account accounts.Account) (accounts.DerivationP
 
 	// Look for the path in the URL
 	if account.URL.Scheme != w.Hub.scheme {
-		return nil, fmt.Errorf("Scheme %s does not match wallet scheme %s", account.URL.Scheme, w.Hub.scheme)
+		return nil, fmt.Errorf("scheme %s does not match wallet scheme %s", account.URL.Scheme, w.Hub.scheme)
 	}
 
 	parts := strings.SplitN(account.URL.Path, "/", 2)
 	if len(parts) != 2 {
-		return nil, fmt.Errorf("Invalid URL format: %s", account.URL)
+		return nil, fmt.Errorf("invalid URL format: %s", account.URL)
 	}
 
 	if parts[0] != fmt.Sprintf("%x", w.PublicKey[1:3]) {
@@ -803,7 +813,7 @@ func (s *Session) pair(secret []byte) (smartcardPairing, error) {
 // unpair deletes an existing pairing.
 func (s *Session) unpair() error {
 	if !s.verified {
-		return fmt.Errorf("Unpair requires that the PIN be verified")
+		return fmt.Errorf("unpair requires that the PIN be verified")
 	}
 	return s.Channel.Unpair()
 }
@@ -840,7 +850,7 @@ func (s *Session) paired() bool {
 // authenticate uses an existing pairing to establish a secure channel.
 func (s *Session) authenticate(pairing smartcardPairing) error {
 	if !bytes.Equal(s.Wallet.PublicKey, pairing.PublicKey) {
-		return fmt.Errorf("Cannot pair using another wallet's pairing; %x != %x", s.Wallet.PublicKey, pairing.PublicKey)
+		return fmt.Errorf("cannot pair using another wallet's pairing; %x != %x", s.Wallet.PublicKey, pairing.PublicKey)
 	}
 	s.Channel.PairingKey = pairing.PairingKey
 	s.Channel.PairingIndex = pairing.PairingIndex
@@ -869,6 +879,7 @@ func (s *Session) walletStatus() (*walletStatus, error) {
 }
 
 // derivationPath fetches the wallet's current derivation path from the card.
+//lint:ignore U1000 needs to be added to the console interface
 func (s *Session) derivationPath() (accounts.DerivationPath, error) {
 	response, err := s.Channel.transmitEncrypted(claSCWallet, insStatus, statusP1Path, 0, nil)
 	if err != nil {
@@ -972,12 +983,10 @@ func (s *Session) derive(path accounts.DerivationPath) (accounts.Account, error)
 	copy(sig[32-len(rbytes):32], rbytes)
 	copy(sig[64-len(sbytes):64], sbytes)
 
-	pubkey, err := determinePublicKey(sig, sigdata.PublicKey)
-	if err != nil {
+	if err := confirmPublicKey(sig, sigdata.PublicKey); err != nil {
 		return accounts.Account{}, err
 	}
-
-	pub, err := crypto.UnmarshalPubkey(pubkey)
+	pub, err := crypto.UnmarshalPubkey(sigdata.PublicKey)
 	if err != nil {
 		return accounts.Account{}, err
 	}
@@ -985,12 +994,14 @@ func (s *Session) derive(path accounts.DerivationPath) (accounts.Account, error)
 }
 
 // keyExport contains information on an exported keypair.
+//lint:ignore U1000 needs to be added to the console interface
 type keyExport struct {
 	PublicKey  []byte `asn1:"tag:0"`
 	PrivateKey []byte `asn1:"tag:1,optional"`
 }
 
 // publicKey returns the public key for the current derivation path.
+//lint:ignore U1000 needs to be added to the console interface
 func (s *Session) publicKey() ([]byte, error) {
 	response, err := s.Channel.transmitEncrypted(claSCWallet, insExportKey, exportP1Any, exportP2Pubkey, nil)
 	if err != nil {
@@ -1047,36 +1058,28 @@ func (s *Session) sign(path accounts.DerivationPath, hash []byte) ([]byte, error
 	return sig, nil
 }
 
-// determinePublicKey uses a signature and the X component of a public key to
-// recover the entire public key.
-func determinePublicKey(sig, pubkeyX []byte) ([]byte, error) {
-	for v := 0; v < 2; v++ {
-		sig[64] = byte(v)
-		pubkey, err := crypto.Ecrecover(DerivationSignatureHash[:], sig)
-		if err == nil {
-			if bytes.Equal(pubkey, pubkeyX) {
-				return pubkey, nil
-			}
-		} else if v == 1 || err != secp256k1.ErrRecoverFailed {
-			return nil, err
-		}
-	}
-	return nil, ErrPubkeyMismatch
+// confirmPublicKey confirms that the given signature belongs to the specified key.
+func confirmPublicKey(sig, pubkey []byte) error {
+	_, err := makeRecoverableSignature(DerivationSignatureHash[:], sig, pubkey)
+	return err
 }
 
 // makeRecoverableSignature uses a signature and an expected public key to
 // recover the v value and produce a recoverable signature.
 func makeRecoverableSignature(hash, sig, expectedPubkey []byte) ([]byte, error) {
+	var libraryError error
 	for v := 0; v < 2; v++ {
 		sig[64] = byte(v)
-		pubkey, err := crypto.Ecrecover(hash, sig)
-		if err == nil {
+		if pubkey, err := crypto.Ecrecover(hash, sig); err == nil {
 			if bytes.Equal(pubkey, expectedPubkey) {
 				return sig, nil
 			}
-		} else if v == 1 || err != secp256k1.ErrRecoverFailed {
-			return nil, err
+		} else {
+			libraryError = err
 		}
+	}
+	if libraryError != nil {
+		return nil, libraryError
 	}
 	return nil, ErrPubkeyMismatch
 }

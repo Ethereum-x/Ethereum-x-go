@@ -1,4 +1,4 @@
-// Copyright 2018 The go-ethereum Authors
+// Copyright 2019 The go-ethereum Authors
 // This file is part of the go-ethereum library.
 //
 // The go-ethereum library is free software: you can redistribute it and/or modify
@@ -17,364 +17,189 @@
 package les
 
 import (
-	"context"
 	"errors"
-	"sync"
+	"fmt"
+	"math"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/common/mclock"
 	"github.com/ethereum/go-ethereum/p2p/enode"
-	"github.com/ethereum/go-ethereum/rpc"
 )
 
 var (
-	ErrMinCap               = errors.New("capacity too small")
-	ErrTotalCap             = errors.New("total capacity exceeded")
-	ErrUnknownBenchmarkType = errors.New("unknown benchmark type")
-
-	dropCapacityDelay = time.Second // delay applied to decreasing capacity changes
+	errNoCheckpoint         = errors.New("no local checkpoint provided")
+	errNotActivated         = errors.New("checkpoint registrar is not activated")
+	errUnknownBenchmarkType = errors.New("unknown benchmark type")
+	errBalanceOverflow      = errors.New("balance overflow")
+	errNoPriority           = errors.New("priority too low to raise capacity")
 )
 
+const maxBalance = math.MaxInt64
+
 // PrivateLightServerAPI provides an API to access the LES light server.
-// It offers only methods that operate on public data that is freely available to anyone.
 type PrivateLightServerAPI struct {
-	server *LesServer
+	server                               *LesServer
+	defaultPosFactors, defaultNegFactors priceFactors
 }
 
 // NewPrivateLightServerAPI creates a new LES light server API.
 func NewPrivateLightServerAPI(server *LesServer) *PrivateLightServerAPI {
 	return &PrivateLightServerAPI{
-		server: server,
+		server:            server,
+		defaultPosFactors: server.clientPool.defaultPosFactors,
+		defaultNegFactors: server.clientPool.defaultNegFactors,
 	}
 }
 
-// TotalCapacity queries total available capacity for all clients
-func (api *PrivateLightServerAPI) TotalCapacity() hexutil.Uint64 {
-	return hexutil.Uint64(api.server.priorityClientPool.totalCapacity())
+// ServerInfo returns global server parameters
+func (api *PrivateLightServerAPI) ServerInfo() map[string]interface{} {
+	res := make(map[string]interface{})
+	res["minimumCapacity"] = api.server.minCapacity
+	res["maximumCapacity"] = api.server.maxCapacity
+	res["freeClientCapacity"] = api.server.freeCapacity
+	res["totalCapacity"], res["totalConnectedCapacity"], res["priorityConnectedCapacity"] = api.server.clientPool.capacityInfo()
+	return res
 }
 
-// SubscribeTotalCapacity subscribes to changed total capacity events.
-// If onlyUnderrun is true then notification is sent only if the total capacity
-// drops under the total capacity of connected priority clients.
-//
-// Note: actually applying decreasing total capacity values is delayed while the
-// notification is sent instantly. This allows lowering the capacity of a priority client
-// or choosing which one to drop before the system drops some of them automatically.
-func (api *PrivateLightServerAPI) SubscribeTotalCapacity(ctx context.Context, onlyUnderrun bool) (*rpc.Subscription, error) {
-	notifier, supported := rpc.NotifierFromContext(ctx)
-	if !supported {
-		return &rpc.Subscription{}, rpc.ErrNotificationsUnsupported
-	}
-	rpcSub := notifier.CreateSubscription()
-	api.server.priorityClientPool.subscribeTotalCapacity(&tcSubscription{notifier, rpcSub, onlyUnderrun})
-	return rpcSub, nil
-}
-
-type (
-	// tcSubscription represents a total capacity subscription
-	tcSubscription struct {
-		notifier     *rpc.Notifier
-		rpcSub       *rpc.Subscription
-		onlyUnderrun bool
-	}
-	tcSubs map[*tcSubscription]struct{}
-)
-
-// send sends a changed total capacity event to the subscribers
-func (s tcSubs) send(tc uint64, underrun bool) {
-	for sub := range s {
-		select {
-		case <-sub.rpcSub.Err():
-			delete(s, sub)
-		case <-sub.notifier.Closed():
-			delete(s, sub)
-		default:
-			if underrun || !sub.onlyUnderrun {
-				sub.notifier.Notify(sub.rpcSub.ID, tc)
-			}
-		}
-	}
-}
-
-// MinimumCapacity queries minimum assignable capacity for a single client
-func (api *PrivateLightServerAPI) MinimumCapacity() hexutil.Uint64 {
-	return hexutil.Uint64(minCapacity)
-}
-
-// FreeClientCapacity queries the capacity provided for free clients
-func (api *PrivateLightServerAPI) FreeClientCapacity() hexutil.Uint64 {
-	return hexutil.Uint64(api.server.freeClientCap)
-}
-
-// SetClientCapacity sets the priority capacity assigned to a given client.
-// If the assigned capacity is bigger than zero then connection is always
-// guaranteed. The sum of capacity assigned to priority clients can not exceed
-// the total available capacity.
-//
-// Note: assigned capacity can be changed while the client is connected with
-// immediate effect.
-func (api *PrivateLightServerAPI) SetClientCapacity(id enode.ID, cap uint64) error {
-	if cap != 0 && cap < minCapacity {
-		return ErrMinCap
-	}
-	return api.server.priorityClientPool.setClientCapacity(id, cap)
-}
-
-// GetClientCapacity returns the capacity assigned to a given client
-func (api *PrivateLightServerAPI) GetClientCapacity(id enode.ID) hexutil.Uint64 {
-	api.server.priorityClientPool.lock.Lock()
-	defer api.server.priorityClientPool.lock.Unlock()
-
-	return hexutil.Uint64(api.server.priorityClientPool.clients[id].cap)
-}
-
-// clientPool is implemented by both the free and priority client pools
-type clientPool interface {
-	peerSetNotify
-	setLimits(count int, totalCap uint64)
-}
-
-// priorityClientPool stores information about prioritized clients
-type priorityClientPool struct {
-	lock                             sync.Mutex
-	child                            clientPool
-	ps                               *peerSet
-	clients                          map[enode.ID]priorityClientInfo
-	totalCap, totalCapAnnounced      uint64
-	totalConnectedCap, freeClientCap uint64
-	maxPeers, priorityCount          int
-
-	subs            tcSubs
-	updateSchedule  []scheduledUpdate
-	scheduleCounter uint64
-}
-
-// scheduledUpdate represents a delayed total capacity update
-type scheduledUpdate struct {
-	time         mclock.AbsTime
-	totalCap, id uint64
-}
-
-// priorityClientInfo entries exist for all prioritized clients and currently connected non-priority clients
-type priorityClientInfo struct {
-	cap       uint64 // zero for non-priority clients
-	connected bool
-	peer      *peer
-}
-
-// newPriorityClientPool creates a new priority client pool
-func newPriorityClientPool(freeClientCap uint64, ps *peerSet, child clientPool) *priorityClientPool {
-	return &priorityClientPool{
-		clients:       make(map[enode.ID]priorityClientInfo),
-		freeClientCap: freeClientCap,
-		ps:            ps,
-		child:         child,
-	}
-}
-
-// registerPeer is called when a new client is connected. If the client has no
-// priority assigned then it is passed to the child pool which may either keep it
-// or disconnect it.
-//
-// Note: priorityClientPool also stores a record about free clients while they are
-// connected in order to be able to assign priority to them later.
-func (v *priorityClientPool) registerPeer(p *peer) {
-	v.lock.Lock()
-	defer v.lock.Unlock()
-
-	id := p.ID()
-	c := v.clients[id]
-	if c.connected {
-		return
-	}
-	if c.cap == 0 && v.child != nil {
-		v.child.registerPeer(p)
-	}
-	if c.cap != 0 && v.totalConnectedCap+c.cap > v.totalCap {
-		go v.ps.Unregister(p.id)
-		return
-	}
-
-	c.connected = true
-	c.peer = p
-	v.clients[id] = c
-	if c.cap != 0 {
-		v.priorityCount++
-		v.totalConnectedCap += c.cap
-		if v.child != nil {
-			v.child.setLimits(v.maxPeers-v.priorityCount, v.totalCap-v.totalConnectedCap)
-		}
-		p.updateCapacity(c.cap)
-	}
-}
-
-// unregisterPeer is called when a client is disconnected. If the client has no
-// priority assigned then it is also removed from the child pool.
-func (v *priorityClientPool) unregisterPeer(p *peer) {
-	v.lock.Lock()
-	defer v.lock.Unlock()
-
-	id := p.ID()
-	c := v.clients[id]
-	if !c.connected {
-		return
-	}
-	if c.cap != 0 {
-		c.connected = false
-		v.clients[id] = c
-		v.priorityCount--
-		v.totalConnectedCap -= c.cap
-		if v.child != nil {
-			v.child.setLimits(v.maxPeers-v.priorityCount, v.totalCap-v.totalConnectedCap)
-		}
-	} else {
-		if v.child != nil {
-			v.child.unregisterPeer(p)
-		}
-		delete(v.clients, id)
-	}
-}
-
-// setLimits updates the allowed peer count and total capacity of the priority
-// client pool. Since the free client pool is a child of the priority pool the
-// remaining peer count and capacity is assigned to the free pool by calling its
-// own setLimits function.
-//
-// Note: a decreasing change of the total capacity is applied with a delay.
-func (v *priorityClientPool) setLimits(count int, totalCap uint64) {
-	v.lock.Lock()
-	defer v.lock.Unlock()
-
-	v.totalCapAnnounced = totalCap
-	if totalCap > v.totalCap {
-		v.setLimitsNow(count, totalCap)
-		v.subs.send(totalCap, false)
-		return
-	}
-	v.setLimitsNow(count, v.totalCap)
-	if totalCap < v.totalCap {
-		v.subs.send(totalCap, totalCap < v.totalConnectedCap)
-		for i, s := range v.updateSchedule {
-			if totalCap >= s.totalCap {
-				s.totalCap = totalCap
-				v.updateSchedule = v.updateSchedule[:i+1]
-				return
-			}
-		}
-		v.updateSchedule = append(v.updateSchedule, scheduledUpdate{time: mclock.Now() + mclock.AbsTime(dropCapacityDelay), totalCap: totalCap})
-		if len(v.updateSchedule) == 1 {
-			v.scheduleCounter++
-			id := v.scheduleCounter
-			v.updateSchedule[0].id = id
-			time.AfterFunc(dropCapacityDelay, func() { v.checkUpdate(id) })
-		}
-	} else {
-		v.updateSchedule = nil
-	}
-}
-
-// checkUpdate performs the next scheduled update if possible and schedules
-// the one after that
-func (v *priorityClientPool) checkUpdate(id uint64) {
-	v.lock.Lock()
-	defer v.lock.Unlock()
-
-	if len(v.updateSchedule) == 0 || v.updateSchedule[0].id != id {
-		return
-	}
-	v.setLimitsNow(v.maxPeers, v.updateSchedule[0].totalCap)
-	v.updateSchedule = v.updateSchedule[1:]
-	if len(v.updateSchedule) != 0 {
-		v.scheduleCounter++
-		id := v.scheduleCounter
-		v.updateSchedule[0].id = id
-		dt := time.Duration(v.updateSchedule[0].time - mclock.Now())
-		time.AfterFunc(dt, func() { v.checkUpdate(id) })
-	}
-}
-
-// setLimits updates the allowed peer count and total capacity immediately
-func (v *priorityClientPool) setLimitsNow(count int, totalCap uint64) {
-	if v.priorityCount > count || v.totalConnectedCap > totalCap {
-		for id, c := range v.clients {
-			if c.connected {
-				c.connected = false
-				v.totalConnectedCap -= c.cap
-				v.priorityCount--
-				v.clients[id] = c
-				go v.ps.Unregister(c.peer.id)
-				if v.priorityCount <= count && v.totalConnectedCap <= totalCap {
-					break
-				}
-			}
-		}
-	}
-	v.maxPeers = count
-	v.totalCap = totalCap
-	if v.child != nil {
-		v.child.setLimits(v.maxPeers-v.priorityCount, v.totalCap-v.totalConnectedCap)
-	}
-}
-
-// totalCapacity queries total available capacity for all clients
-func (v *priorityClientPool) totalCapacity() uint64 {
-	v.lock.Lock()
-	defer v.lock.Unlock()
-
-	return v.totalCapAnnounced
-}
-
-// subscribeTotalCapacity subscribes to changed total capacity events
-func (v *priorityClientPool) subscribeTotalCapacity(sub *tcSubscription) {
-	v.lock.Lock()
-	defer v.lock.Unlock()
-
-	v.subs[sub] = struct{}{}
-}
-
-// setClientCapacity sets the priority capacity assigned to a given client
-func (v *priorityClientPool) setClientCapacity(id enode.ID, cap uint64) error {
-	v.lock.Lock()
-	defer v.lock.Unlock()
-
-	c := v.clients[id]
-	if c.cap == cap {
+// ClientInfo returns information about clients listed in the ids list or matching the given tags
+func (api *PrivateLightServerAPI) ClientInfo(ids []enode.ID) map[enode.ID]map[string]interface{} {
+	res := make(map[enode.ID]map[string]interface{})
+	api.server.clientPool.forClients(ids, func(client *clientInfo, id enode.ID) error {
+		res[id] = api.clientInfo(client, id)
 		return nil
+	})
+	return res
+}
+
+// PriorityClientInfo returns information about clients with a positive balance
+// in the given ID range (stop excluded). If stop is null then the iterator stops
+// only at the end of the ID space. MaxCount limits the number of results returned.
+// If maxCount limit is applied but there are more potential results then the ID
+// of the next potential result is included in the map with an empty structure
+// assigned to it.
+func (api *PrivateLightServerAPI) PriorityClientInfo(start, stop enode.ID, maxCount int) map[enode.ID]map[string]interface{} {
+	res := make(map[enode.ID]map[string]interface{})
+	ids := api.server.clientPool.ndb.getPosBalanceIDs(start, stop, maxCount+1)
+	if len(ids) > maxCount {
+		res[ids[maxCount]] = make(map[string]interface{})
+		ids = ids[:maxCount]
 	}
-	if c.connected {
-		if v.totalConnectedCap+cap > v.totalCap+c.cap {
-			return ErrTotalCap
-		}
-		if c.cap == 0 {
-			if v.child != nil {
-				v.child.unregisterPeer(c.peer)
-			}
-			v.priorityCount++
-		}
-		if cap == 0 {
-			v.priorityCount--
-		}
-		v.totalConnectedCap += cap - c.cap
-		if v.child != nil {
-			v.child.setLimits(v.maxPeers-v.priorityCount, v.totalCap-v.totalConnectedCap)
-		}
-		if cap == 0 {
-			if v.child != nil {
-				v.child.registerPeer(c.peer)
-			}
-			c.peer.updateCapacity(v.freeClientCap)
-		} else {
-			c.peer.updateCapacity(cap)
-		}
+	if len(ids) != 0 {
+		api.server.clientPool.forClients(ids, func(client *clientInfo, id enode.ID) error {
+			res[id] = api.clientInfo(client, id)
+			return nil
+		})
 	}
-	if cap != 0 || c.connected {
-		c.cap = cap
-		v.clients[id] = c
+	return res
+}
+
+// clientInfo creates a client info data structure
+func (api *PrivateLightServerAPI) clientInfo(c *clientInfo, id enode.ID) map[string]interface{} {
+	info := make(map[string]interface{})
+	if c != nil {
+		now := mclock.Now()
+		info["isConnected"] = true
+		info["connectionTime"] = float64(now-c.connectedAt) / float64(time.Second)
+		info["capacity"] = c.capacity
+		pb, nb := c.balanceTracker.getBalance(now)
+		info["pricing/balance"], info["pricing/negBalance"] = pb, nb
+		info["pricing/balanceMeta"] = c.balanceMetaInfo
+		info["priority"] = pb != 0
 	} else {
-		delete(v.clients, id)
+		info["isConnected"] = false
+		pb := api.server.clientPool.ndb.getOrNewPB(id)
+		info["pricing/balance"], info["pricing/balanceMeta"] = pb.value, pb.meta
+		info["priority"] = pb.value != 0
 	}
-	return nil
+	return info
+}
+
+// setParams either sets the given parameters for a single connected client (if specified)
+// or the default parameters applicable to clients connected in the future
+func (api *PrivateLightServerAPI) setParams(params map[string]interface{}, client *clientInfo, posFactors, negFactors *priceFactors) (updateFactors bool, err error) {
+	defParams := client == nil
+	if !defParams {
+		posFactors, negFactors = &client.posFactors, &client.negFactors
+	}
+	for name, value := range params {
+		errValue := func() error {
+			return fmt.Errorf("invalid value for parameter '%s'", name)
+		}
+		setFactor := func(v *float64) {
+			if val, ok := value.(float64); ok && val >= 0 {
+				*v = val / float64(time.Second)
+				updateFactors = true
+			} else {
+				err = errValue()
+			}
+		}
+
+		switch {
+		case name == "pricing/timeFactor":
+			setFactor(&posFactors.timeFactor)
+		case name == "pricing/capacityFactor":
+			setFactor(&posFactors.capacityFactor)
+		case name == "pricing/requestCostFactor":
+			setFactor(&posFactors.requestFactor)
+		case name == "pricing/negative/timeFactor":
+			setFactor(&negFactors.timeFactor)
+		case name == "pricing/negative/capacityFactor":
+			setFactor(&negFactors.capacityFactor)
+		case name == "pricing/negative/requestCostFactor":
+			setFactor(&negFactors.requestFactor)
+		case !defParams && name == "capacity":
+			if capacity, ok := value.(float64); ok && uint64(capacity) >= api.server.minCapacity {
+				err = api.server.clientPool.setCapacity(client, uint64(capacity))
+				// Don't have to call factor update explicitly. It's already done
+				// in setCapacity function.
+			} else {
+				err = errValue()
+			}
+		default:
+			if defParams {
+				err = fmt.Errorf("invalid default parameter '%s'", name)
+			} else {
+				err = fmt.Errorf("invalid client parameter '%s'", name)
+			}
+		}
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+// AddBalance updates the balance of a client (either overwrites it or adds to it).
+// It also updates the balance meta info string.
+func (api *PrivateLightServerAPI) AddBalance(id enode.ID, value int64, meta string) ([2]uint64, error) {
+	oldBalance, newBalance, err := api.server.clientPool.addBalance(id, value, meta)
+	return [2]uint64{oldBalance, newBalance}, err
+}
+
+// SetClientParams sets client parameters for all clients listed in the ids list
+// or all connected clients if the list is empty
+func (api *PrivateLightServerAPI) SetClientParams(ids []enode.ID, params map[string]interface{}) error {
+	return api.server.clientPool.forClients(ids, func(client *clientInfo, id enode.ID) error {
+		if client != nil {
+			update, err := api.setParams(params, client, nil, nil)
+			if update {
+				client.updatePriceFactors()
+			}
+			return err
+		} else {
+			return fmt.Errorf("client %064x is not connected", id[:])
+		}
+	})
+}
+
+// SetDefaultParams sets the default parameters applicable to clients connected in the future
+func (api *PrivateLightServerAPI) SetDefaultParams(params map[string]interface{}) error {
+	update, err := api.setParams(params, nil, &api.defaultPosFactors, &api.defaultNegFactors)
+	if update {
+		api.server.clientPool.setDefaultFactors(api.defaultPosFactors, api.defaultNegFactors)
+	}
+	return err
 }
 
 // Benchmark runs a request performance benchmark with a given set of measurement setups
@@ -430,13 +255,13 @@ func (api *PrivateLightServerAPI) Benchmark(setups []map[string]interface{}, pas
 			case "txStatus":
 				benchmarks[i] = &benchmarkTxStatus{}
 			default:
-				return nil, ErrUnknownBenchmarkType
+				return nil, errUnknownBenchmarkType
 			}
 		} else {
-			return nil, ErrUnknownBenchmarkType
+			return nil, errUnknownBenchmarkType
 		}
 	}
-	rs := api.server.protocolManager.runBenchmark(benchmarks, passCount, time.Millisecond*time.Duration(length))
+	rs := api.server.handler.runBenchmark(benchmarks, passCount, time.Millisecond*time.Duration(length))
 	result := make([]map[string]interface{}, len(setups))
 	for i, r := range rs {
 		res := make(map[string]interface{})
@@ -451,4 +276,79 @@ func (api *PrivateLightServerAPI) Benchmark(setups []map[string]interface{}, pas
 		result[i] = res
 	}
 	return result, nil
+}
+
+// PrivateDebugAPI provides an API to debug LES light server functionality.
+type PrivateDebugAPI struct {
+	server *LesServer
+}
+
+// NewPrivateDebugAPI creates a new LES light server debug API.
+func NewPrivateDebugAPI(server *LesServer) *PrivateDebugAPI {
+	return &PrivateDebugAPI{
+		server: server,
+	}
+}
+
+// FreezeClient forces a temporary client freeze which normally happens when the server is overloaded
+func (api *PrivateDebugAPI) FreezeClient(id enode.ID) error {
+	return api.server.clientPool.forClients([]enode.ID{id}, func(c *clientInfo, id enode.ID) error {
+		if c == nil {
+			return fmt.Errorf("client %064x is not connected", id[:])
+		}
+		c.peer.freezeClient()
+		return nil
+	})
+}
+
+// PrivateLightAPI provides an API to access the LES light server or light client.
+type PrivateLightAPI struct {
+	backend *lesCommons
+}
+
+// NewPrivateLightAPI creates a new LES service API.
+func NewPrivateLightAPI(backend *lesCommons) *PrivateLightAPI {
+	return &PrivateLightAPI{backend: backend}
+}
+
+// LatestCheckpoint returns the latest local checkpoint package.
+//
+// The checkpoint package consists of 4 strings:
+//   result[0], hex encoded latest section index
+//   result[1], 32 bytes hex encoded latest section head hash
+//   result[2], 32 bytes hex encoded latest section canonical hash trie root hash
+//   result[3], 32 bytes hex encoded latest section bloom trie root hash
+func (api *PrivateLightAPI) LatestCheckpoint() ([4]string, error) {
+	var res [4]string
+	cp := api.backend.latestLocalCheckpoint()
+	if cp.Empty() {
+		return res, errNoCheckpoint
+	}
+	res[0] = hexutil.EncodeUint64(cp.SectionIndex)
+	res[1], res[2], res[3] = cp.SectionHead.Hex(), cp.CHTRoot.Hex(), cp.BloomRoot.Hex()
+	return res, nil
+}
+
+// GetLocalCheckpoint returns the specific local checkpoint package.
+//
+// The checkpoint package consists of 3 strings:
+//   result[0], 32 bytes hex encoded latest section head hash
+//   result[1], 32 bytes hex encoded latest section canonical hash trie root hash
+//   result[2], 32 bytes hex encoded latest section bloom trie root hash
+func (api *PrivateLightAPI) GetCheckpoint(index uint64) ([3]string, error) {
+	var res [3]string
+	cp := api.backend.localCheckpoint(index)
+	if cp.Empty() {
+		return res, errNoCheckpoint
+	}
+	res[0], res[1], res[2] = cp.SectionHead.Hex(), cp.CHTRoot.Hex(), cp.BloomRoot.Hex()
+	return res, nil
+}
+
+// GetCheckpointContractAddress returns the contract contract address in hex format.
+func (api *PrivateLightAPI) GetCheckpointContractAddress() (string, error) {
+	if api.backend.oracle == nil {
+		return "", errNotActivated
+	}
+	return api.backend.oracle.Contract().ContractAddr().Hex(), nil
 }

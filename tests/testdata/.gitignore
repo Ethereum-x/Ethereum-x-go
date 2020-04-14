@@ -5,3 +5,5 @@ docs/_build/
 .vagrant/
 *.pem
 src/GenStateTestAsBcTemp/
+.env3/
+.idea/

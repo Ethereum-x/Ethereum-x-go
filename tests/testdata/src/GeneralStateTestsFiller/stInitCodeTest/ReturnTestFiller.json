@@ -15,11 +15,11 @@
                     "gas" : -1,
                     "value" : -1
                 },
-                "network" : ["Frontier","Homestead", "EIP158", "EIP150"],
+                "network" : [">=Istanbul"],
                 "result" : {
                     "194f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
                         "storage" : {
-                            "0x" : "0x15"
+                            "0x00" : "0x15"
                         }
                     }
                 }

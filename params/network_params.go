@@ -46,4 +46,16 @@ const (
 	// HelperTrieProcessConfirmations is the number of confirmations before a HelperTrie
 	// is generated
 	HelperTrieProcessConfirmations = 256
+
+	// CheckpointFrequency is the block frequency for creating checkpoint
+	CheckpointFrequency = 32768
+
+	// CheckpointProcessConfirmations is the number before a checkpoint is generated
+	CheckpointProcessConfirmations = 256
+
+	// ImmutabilityThreshold is the number of blocks after which a chain segment is
+	// considered immutable (i.e. soft finality). It is used by the downloader as a
+	// hard limit against deep ancestors, by the blockchain against deep reorgs, by
+	// the freezer as the cutoff treshold and by clique as the snapshot trust limit.
+	ImmutabilityThreshold = 90000
 )

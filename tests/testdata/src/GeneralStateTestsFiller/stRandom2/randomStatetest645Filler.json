@@ -11,6 +11,41 @@
 		"currentTimestamp":"0x03e8",
 		"previousHash":"0x5eb83427b085a697cdb3c2c7991fce7a40927c6a40f496bbfcfba65d24617fe7"
 	},
+	"expect": 
+	[
+	    {
+                "indexes" : {
+                    "data" : -1,
+                    "gas" : -1,
+                    "value" : -1
+                },
+                "network" : [">=Istanbul"],
+                "result" : {
+                    "0x1000000000000000000000000000000000000000" : {
+                            "nonce" : "0x1d",
+                            "storage" : {
+                            }
+                        },
+                        "0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
+                            "code" : "",
+                            "nonce" : "0x01",
+                            "storage" : {
+                            }
+                        },
+                        "0xb94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
+                            "nonce" : "0xaf",
+                            "storage" : {
+                            }
+                        },
+                        "0xffffffffffffffffffffffffffffffffffffffff" : {
+                            "code" : "",
+                            "nonce" : "0x1c",
+                            "storage" : {
+                            }
+                        }
+                }
+            }
+	],
 	"pre":{
 		"0x1000000000000000000000000000000000000000":{
 			"balance":"0xbcbaf5a33577f162",

@@ -24,7 +24,7 @@ in the ``pre`` portion and form the world state prior to execution. Similarly, a
 of accounts are detailed in the ``post`` portion to specify the end world state.
 
 The gas remaining (``gas``), the log entries (``logs``) as well as any output returned 
-from the code (``output``) is also detailed.
+from the code (``out``) is also detailed.
 
 
 Test Implementation
@@ -120,20 +120,20 @@ The ``callcreates`` section details each ``CALL`` or ``CREATE`` instruction that
 The logs Section
 ^^^^^^^^^^^^^^^^
 
-The ``logs`` sections is a mapping between the blooms and their corresponding logentries.
+The ``logs`` sections contains the hex encoded hash of the rlp encoded log entries, reducing the overall size of the test files while still verifying that all of the data is accurate (at the cost of being able to read what the data should be).
 Each logentry has the format:
 
-* ``address``: The address of the logentry.
-* ``data``: The data of the logentry.
-* ``topics``: The topics of the logentry, given as an array of values.  
+keccak(rlp.encode(log_entries))
+
+(see https://github.com/ethereum/py-evm/blob/7a96fa3a2b00af9bea189444d88a3cce6a6be05f/eth/tools/_utils/hashing.py#L8-L16)
 
 The gas and output Keys
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Finally, there are two simple keys, ``gas`` and ``output``:
+Finally, there are two simple keys, ``gas`` and ``out``:
 
 * ``gas``: The amount of gas remaining after execution.
-* ``output``: The data, given as an array of bytes, returned from the execution (using the ``RETURN`` instruction). See $DATA_ARRAY.
+* ``out``: The data, given as an array of bytes, returned from the execution (using the ``RETURN`` instruction). See $DATA_ARRAY.
 
  **$DATA_ARRAY** - type that intended to contain raw byte data   
   and for convenient of the users is populated with three   

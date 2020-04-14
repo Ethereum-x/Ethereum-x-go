@@ -11,11 +11,11 @@
         "expect" : [
             {
                 "indexes" : { "data" : -1, "gas" : -1, "value" : -1 },
-                "network" : ["Frontier","Homestead", "EIP158", "EIP150" ],
+                "network" : [ ">=Istanbul" ],
                 "result" : {
                     "bbbf5374fce5edbc8e2a8697c15331677e6ebf0b" : {
                         "storage" : {
-                            "0x" : "0x01",
+                            "0x00" : "0x01",
                             "0x02" : "0x03e9"
                         }
                     }
@@ -50,7 +50,7 @@
                 ""
             ],
             "gasLimit" : [
-                "0x7fffffffffffffff"
+                "9214364837600034817"
             ],
             "gasPrice" : "1",
             "nonce" : "",

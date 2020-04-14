@@ -18,47 +18,7 @@
                     "gas" : 0,
                     "value" : -1
                 },
-                "network" : ["Frontier", "Homestead", "EIP150", "EIP158"],
-                "result" : {
-		    "c94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
-		        "storage" : {
-                        }
-		    },
-		    "094f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
-                        "storage" : {
-                        }
-                    },
-		    "b0005374fce5edbc8e2a8697c15331677e6ebf0b" : {
-			"storage" : {
-                        }
-		     }
-                }
-            },
-	    {
-                "indexes" : {
-                    "data" : 0,
-                    "gas" : 1,
-                    "value" : -1
-                },
-                "network" : ["Frontier", "Homestead", "EIP150", "EIP158"],
-                "result" : {
-		    "c94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
-		        "storage" : {
-                        }
-		    },
-		    "b0005374fce5edbc8e2a8697c15331677e6ebf0b" : {
-			"storage" : {
-                        }
-		     }
-                }
-            },
-	    {
-                "indexes" : {
-                    "data" : 0,
-                    "gas" : 0,
-                    "value" : -1
-                },
-                "network" : ["Byzantium"],
+                "network" : [">=Istanbul"],
                 "result" : {
 		    "c94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
 		        "storage" : {
@@ -83,7 +43,7 @@
                     "gas" : 1,
                     "value" : -1
                 },
-                "network" : ["Byzantium"],
+                "network" : [">=Istanbul"],
                 "result" : {
 		    "c94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
 		        "storage" : {
@@ -101,7 +61,7 @@
                     "gas" : 0,
                     "value" : -1
                 },
-                "network" : ["Byzantium"],
+                "network" : [">=Istanbul"],
                 "result" : {
 		    "c94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
 		        "storage" : {
@@ -109,7 +69,7 @@
 		    },
 		    "094f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
                         "storage" : {
-							"0x0a" : "0x01"
+			    "0x0a" : "0x01"
                         }
                     },
 		    "b1005374fce5edbc8e2a8697c15331677e6ebf0b" : {
@@ -126,7 +86,7 @@
                     "gas" : 1,
                     "value" : -1
                 },
-                "network" : ["Byzantium"],
+                "network" : [">=Istanbul"],
                 "result" : {
 		    "c94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
 		        "storage" : {
@@ -144,7 +104,7 @@
                     "gas" : 0,
                     "value" : -1
                 },
-                "network" : ["Byzantium"],
+                "network" : [">=Istanbul"],
                 "result" : {
 		    "c94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
 		        "storage" : {
@@ -169,7 +129,7 @@
                     "gas" : 1,
                     "value" : -1
                 },
-                "network" : ["Byzantium"],
+                "network" : [">=Istanbul"],
                 "result" : {
 		    "c94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
 		        "storage" : {
@@ -187,7 +147,7 @@
                     "gas" : 0,
                     "value" : -1
                 },
-                "network" : ["Byzantium"],
+                "network" : [">=Istanbul"],
                 "result" : {
 		    "c94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
 		        "storage" : {
@@ -208,6 +168,37 @@
 			"nonce" : "0",
 			"storage" : {
                             "0x05" : "0x01"
+                        }
+		     }
+                }
+            },
+	    {
+                "indexes" : {
+                    "data" : 3,
+                    "gas" : 1,
+                    "value" : -1
+                },
+                "network" : [">=Istanbul"],
+                "result" : {
+		    "c94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
+		        "storage" : {
+                        }
+		    },
+		    "094f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
+                        "storage" : {
+                            "0x0a" : "0xff"
+                        }
+                    },
+		    "b3005374fce5edbc8e2a8697c15331677e6ebf0b" : {
+			"nonce" : "0",
+			"storage" : {
+                            "0x00" : "0x00"
+                        }
+		     },
+		    "b3305374fce5edbc8e2a8697c15331677e6ebf0b" : {
+			"nonce" : "0",
+			"storage" : {
+                            "0x05" : "0x00"
                         }
 		     }
                 }

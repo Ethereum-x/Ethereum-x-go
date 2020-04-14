@@ -2,10 +2,11 @@
     "SuicidesAndInternlCallSuicidesOOG" : {
         "_info" : {
             "comment" : "",
-            "filledwith" : "cpp-1.3.0+commit.6e0ce939.Linux.g++",
-            "lllcversion" : "Version: 0.4.18-develop.2017.9.25+commit.a72237f2.Linux.g++",
+            "filling-rpc-server" : "Geth-1.9.6-unstable-63b18027-20190920",
+            "filling-tool-version" : "retesteth-0.0.1+commit.0ae18aef.Linux.g++",
+            "lllcversion" : "Version: 0.5.12-develop.2019.9.13+commit.2d601a4f.Linux.g++",
             "source" : "src/GeneralStateTestsFiller/stTransactionTest/SuicidesAndInternlCallSuicidesOOGFiller.json",
-            "sourceHash" : "83b5109e8c97ea7ac4f46da6c239ff1cbffd124574a3a02a76f516e60ef51cae"
+            "sourceHash" : "c149913cd4b10ab32bbe728506323e4c630a1e3b51f9b38522c35921a657115b"
         },
         "env" : {
             "currentCoinbase" : "0xb94f5374fce5edbc8e2a8697c15331677e6ebf0b",
@@ -16,58 +17,14 @@
             "previousHash" : "0x5e20a0453cecd065ea59c37ac63e079ee08998b6045136a8ce6635c7912ec0b6"
         },
         "post" : {
-            "Byzantium" : [
+            "Istanbul" : [
                 {
-                    "hash" : "0xb9db1ad8faa2ab7375b7e3214d04e444c7bae2eaa9c6555e1506d5421f5b89be",
                     "indexes" : {
                         "data" : 0,
                         "gas" : 0,
                         "value" : 0
                     },
-                    "logs" : "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"
-                }
-            ],
-            "EIP150" : [
-                {
-                    "hash" : "0xb9db1ad8faa2ab7375b7e3214d04e444c7bae2eaa9c6555e1506d5421f5b89be",
-                    "indexes" : {
-                        "data" : 0,
-                        "gas" : 0,
-                        "value" : 0
-                    },
-                    "logs" : "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"
-                }
-            ],
-            "EIP158" : [
-                {
-                    "hash" : "0xb9db1ad8faa2ab7375b7e3214d04e444c7bae2eaa9c6555e1506d5421f5b89be",
-                    "indexes" : {
-                        "data" : 0,
-                        "gas" : 0,
-                        "value" : 0
-                    },
-                    "logs" : "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"
-                }
-            ],
-            "Frontier" : [
-                {
-                    "hash" : "0xb9db1ad8faa2ab7375b7e3214d04e444c7bae2eaa9c6555e1506d5421f5b89be",
-                    "indexes" : {
-                        "data" : 0,
-                        "gas" : 0,
-                        "value" : 0
-                    },
-                    "logs" : "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"
-                }
-            ],
-            "Homestead" : [
-                {
-                    "hash" : "0xb9db1ad8faa2ab7375b7e3214d04e444c7bae2eaa9c6555e1506d5421f5b89be",
-                    "indexes" : {
-                        "data" : 0,
-                        "gas" : 0,
-                        "value" : 0
-                    },
+                    "hash" : "0x7654e7f8b30d907bd355ec76e0e8c6abeb2cbb2fe374ea8dea0ca2d358354e69",
                     "logs" : "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"
                 }
             ]
@@ -75,21 +32,21 @@
         "pre" : {
             "0x0000000000000000000000000000000000000000" : {
                 "balance" : "0x00",
-                "code" : "0x6001ff",
+                "code" : "0x6001ff00",
                 "nonce" : "0x00",
                 "storage" : {
                 }
             },
             "0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
                 "balance" : "0x0186a0",
-                "code" : "",
+                "code" : "0x",
                 "nonce" : "0x00",
                 "storage" : {
                 }
             },
             "0xc94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
                 "balance" : "0x0a",
-                "code" : "0x6000600060006000600160006155f0f1506000ff",
+                "code" : "0x6000600060006000600160006155f0f1506000ff00",
                 "nonce" : "0x00",
                 "storage" : {
                 }
@@ -97,7 +54,7 @@
         },
         "transaction" : {
             "data" : [
-                ""
+                "0x"
             ],
             "gasLimit" : [
                 "0xc350"

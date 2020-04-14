@@ -18,77 +18,13 @@
                     "gas" : 0,
                     "value" : -1
                 },
-                "network" : ["Frontier", "Homestead", "EIP158", "EIP150"],
+                "network" : [">=Istanbul"],
                 "result" : {
 		    "6295ee1b4f6dd65047762f924ecd367c17eabf8f" : {
 		        "shouldnotexist" : "1"
 		    },
 		    "a94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
 			"nonce" : "1"
-		     }
-                }
-            },
-	    {
-                "indexes" : {
-                    "data" : -1,
-                    "gas" : 1,
-                    "value" : -1
-                },
-                "network" : ["Frontier"],
-                "result" : {
-		    "6295ee1b4f6dd65047762f924ecd367c17eabf8f" : {
-		        "shouldnotexist" : "1"
-		    },
-		    "a94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
-			"nonce" : "1"
-		     }
-                }
-            },
-	    {
-                "indexes" : {
-                    "data" : -1,
-                    "gas" : 1,
-                    "value" : -1
-                },
-                "network" : ["Homestead", "EIP158", "EIP150"],
-                "result" : {
-		    "6295ee1b4f6dd65047762f924ecd367c17eabf8f" : {
-		        "shouldnotexist" : "1"
-		    },
-		    "a94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
-			"nonce" : "0"
-		     }
-                }
-            },
-	    {
-                "indexes" : {
-                    "data" : -1,
-                    "gas" : 0,
-                    "value" : -1
-                },
-                "network" : ["Byzantium"],
-                "result" : {
-		    "6295ee1b4f6dd65047762f924ecd367c17eabf8f" : {
-		        "shouldnotexist" : "1"
-		    },
-		    "a94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
-			"nonce" : "1"
-		     }
-                }
-            },
-	    {
-                "indexes" : {
-                    "data" : -1,
-                    "gas" : 1,
-                    "value" : -1
-                },
-                "network" : ["Byzantium"],
-                "result" : {
-		    "6295ee1b4f6dd65047762f924ecd367c17eabf8f" : {
-		        "shouldnotexist" : "1"
-		    },
-		    "a94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
-			"nonce" : "0"
 		     }
                 }
             }
@@ -104,12 +40,12 @@
             }
         },
         "transaction" : {
-	    "data" : "{ [[0]] 1 (REVERT 0 24600) [[1]] 12 }",
+	    "// data" : "{ [[0]] 1 (REVERT 0 24600) [[1]] 12 }",
             "data" : [
                 "0x600160005560016000fd6011600155"
             ],
             "gasLimit" : [
-                "1600000", "40000"
+                "1600000"
             ],
             "gasPrice" : "1",
             "nonce" : "0",

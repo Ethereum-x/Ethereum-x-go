@@ -2,6 +2,9 @@
     "TRANSCT_svalue_TooLarge" : {
 	"Byzantium" : {
         },
+        "Istanbul" : { },  
+        "ConstantinopleFix" : {
+        },
         "Constantinople" : {
         },
         "EIP150" : {

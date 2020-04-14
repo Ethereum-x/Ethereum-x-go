@@ -2,6 +2,9 @@
     "RLPAddressWithFirstZeros" : {
 	"Byzantium" : {
         },
+        "Istanbul" : { },  
+        "ConstantinopleFix" : {
+        },
         "Constantinople" : {
         },
         "EIP150" : {

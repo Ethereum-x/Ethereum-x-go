@@ -2,6 +2,9 @@
     "RLPListLengthWithFirstZeros" : {
 	    "Byzantium" : {
         },
+        "Istanbul" : { },  
+        "ConstantinopleFix" : {
+        },
         "Constantinople" : {
         },
         "EIP150" : {

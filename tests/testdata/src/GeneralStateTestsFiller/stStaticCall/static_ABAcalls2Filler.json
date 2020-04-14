@@ -3,54 +3,34 @@
         "env" : {
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x20000",
-            "currentGasLimit" : "1000000000",
+            "currentGasLimit" : "10000000000",
             "currentNumber" : "1",
             "currentTimestamp" : "1000",
             "previousHash" : "5e20a0453cecd065ea59c37ac63e079ee08998b6045136a8ce6635c7912ec0b6"
         },
         "expect" : [
-            {
-                "indexes" : {
-                    "data" : -1,
-                    "gas" : -1,
-                    "value" : -1
-                },
-                "network" : ["Frontier", "Homestead"],
-                "result" : {
-                    "095e7baea6a6c7c4c2dfeb977efac326af552d87" : {
-                        "storage" : {
-                            "0x" : "0"
-                        }
-                    },
-                    "945304eb96065b2a98b57a48a06ae28d285a71b5" : {
-                        "storage" : {
-                            "0x" : "0"
-                        }
-                    }
-                }
-            },
 	    {
                 "indexes" : {
                     "data" : 0,
                     "gas" : -1,
                     "value" : -1
                 },
-                "network" : ["Byzantium"],
+                "network" : [">=Istanbul"],
                 "result" : {
 		    "1000000000000000000000000000000000000000" : {
 			"storage" : {
 			    "0x00" : "0x01",
-		            "0x01" : "0x01d8c976"
+		            "0x01" : "0x01d8c98d"
 			}
 		    },
                     "095e7baea6a6c7c4c2dfeb977efac326af552d87" : {
                         "storage" : {
-                            "0x" : "0x01"
+                            "0x00" : "0x01"
                         }
                     },
                     "945304eb96065b2a98b57a48a06ae28d285a71b5" : {
                         "storage" : {
-                            "0x" : "0"
+                            "0x00" : "0x00"
                         }
                     }
                 }
@@ -61,22 +41,22 @@
                     "gas" : -1,
                     "value" : -1
                 },
-                "network" : ["Byzantium"],
+                "network" : [">=Istanbul"],
                 "result" : {
 		    "1000000000000000000000000000000000000000" : {
 			"storage" : {
 			    "0x00" : "0x01",
-		            "0x01" : "0x3b955b28"
+		            "0x01" : "0x3b955f34"
 			}
 		    },
                     "095e7baea6a6c7c4c2dfeb977efac326af552d87" : {
                         "storage" : {
-                            "0x" : "0x00"
+                            "0x00" : "0x00"
                         }
                     },
                     "945304eb96065b2a98b57a48a06ae28d285a71b5" : {
                         "storage" : {
-                            "0x" : "0"
+                            "0x00" : "0x00"
                         }
                     }
                 }

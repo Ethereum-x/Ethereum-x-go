@@ -2,6 +2,9 @@
     "TRANSCT__WrongCharAtRLP_3" : {
 	"Byzantium" : {
         },
+        "Istanbul" : { },  
+        "ConstantinopleFix" : {
+        },
         "Constantinople" : {
         },
         "EIP150" : {

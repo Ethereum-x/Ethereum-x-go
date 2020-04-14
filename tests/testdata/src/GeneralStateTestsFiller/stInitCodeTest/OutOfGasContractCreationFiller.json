@@ -11,27 +11,49 @@
         "expect" : [
             {
                 "indexes" : {
-                    "data" : -1,
-                    "gas" : -1,
+                    "data" : 0,
+                    "gas" : 1,
                     "value" : -1
                 },
-                "network" : "Frontier",
+                "network" : [">=Istanbul"],
                 "result" : {
                     "a94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
-                        "balance" : "838000"
+        		    	"nonce" : "1"
+                    },
+                    "6295ee1b4f6dd65047762f924ecd367c17eabf8f" : {
+                        "shouldnotexist" : "1"
                     }
                 }
             },
-	    {
+	        {
                 "indexes" : {
-                    "data" : -1,
-                    "gas" : -1,
+                    "data" : 1,
+                    "gas" : 1,
                     "value" : -1
                 },
-                "network" : ["Homestead", "EIP158", "EIP150"],
+                "network" : [">=Istanbul"],
                 "result" : {
                     "a94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
-                        "balance" : "1000000"
+        		    	"nonce" : "1"
+                    },
+                    "6295ee1b4f6dd65047762f924ecd367c17eabf8f" : {
+                        "nonce" : "1"
+                    }
+                }
+            },
+            {
+                "indexes" : {
+                    "data" : -1,
+                    "gas" : 0,
+                    "value" : -1
+                },
+                "network" : [">=Istanbul"],
+                "result" : {
+                    "a94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
+                        "nonce" : "1"
+                    },
+                    "6295ee1b4f6dd65047762f924ecd367c17eabf8f" : {
+                        "shouldnotexist" : "1"
                     }
                 }
             }
@@ -47,10 +69,11 @@
         },
         "transaction" : {
             "data" : [
-                "0x600a80600c6000396000f200600160008035811a8100"
+                "0x600a80600c6000396000f200600160008035811a8100",
+        		"0x600160015560026001556003600155600460015560056001556006600155"
             ],
             "gasLimit" : [
-                "54000"
+                "56000", "150000"
             ],
             "gasPrice" : "3",
             "nonce" : "0",
