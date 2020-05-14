@@ -27,6 +27,7 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -56,7 +57,8 @@ const jsondata = `
 	{ "type" : "function", "name" : "fixedArrBytes", "stateMutability" : "view", "inputs" : [ { "name" : "bytes", "type" : "bytes" }, { "name" : "fixedArr", "type" : "uint256[2]" } ] },
 	{ "type" : "function", "name" : "mixedArrStr", "stateMutability" : "view", "inputs" : [ { "name" : "str", "type" : "string" }, { "name" : "fixedArr", "type" : "uint256[2]" }, { "name" : "dynArr", "type" : "uint256[]" } ] },
 	{ "type" : "function", "name" : "doubleFixedArrStr", "stateMutability" : "view", "inputs" : [ { "name" : "str", "type" : "string" }, { "name" : "fixedArr1", "type" : "uint256[2]" }, { "name" : "fixedArr2", "type" : "uint256[3]" } ] },
-	{ "type" : "function", "name" : "multipleMixedArrStr", "stateMutability" : "view", "inputs" : [ { "name" : "str", "type" : "string" }, { "name" : "fixedArr1", "type" : "uint256[2]" }, { "name" : "dynArr", "type" : "uint256[]" }, { "name" : "fixedArr2", "type" : "uint256[3]" } ] }
+	{ "type" : "function", "name" : "multipleMixedArrStr", "stateMutability" : "view", "inputs" : [ { "name" : "str", "type" : "string" }, { "name" : "fixedArr1", "type" : "uint256[2]" }, { "name" : "dynArr", "type" : "uint256[]" }, { "name" : "fixedArr2", "type" : "uint256[3]" } ] },
+	{ "type" : "function", "name" : "overloadedNames", "stateMutability" : "view", "inputs": [ { "components": [ { "internalType": "uint256", "name": "_f",	"type": "uint256" }, { "internalType": "uint256", "name": "__f", "type": "uint256"}, { "internalType": "uint256", "name": "f", "type": "uint256"}],"internalType": "struct Overloader.F", "name": "f","type": "tuple"}]}
 ]`
 
 var (
@@ -79,6 +81,10 @@ var (
 	Uint256ArrNested, _ = NewType("uint256[2][2]", "", nil)
 	Uint8ArrNested, _   = NewType("uint8[][2]", "", nil)
 	Uint8SliceNested, _ = NewType("uint8[][]", "", nil)
+	TupleF, _           = NewType("tuple", "struct Overloader.F", []ArgumentMarshaling{
+		{Name: "_f", Type: "uint256"},
+		{Name: "__f", Type: "uint256"},
+		{Name: "f", Type: "uint256"}})
 )
 
 var methods = map[string]Method{
@@ -107,6 +113,7 @@ var methods = map[string]Method{
 	"mixedArrStr":         NewMethod("mixedArrStr", "mixedArrStr", Function, "view", false, false, []Argument{{"str", String, false}, {"fixedArr", Uint256Arr2, false}, {"dynArr", Uint256Arr, false}}, nil),
 	"doubleFixedArrStr":   NewMethod("doubleFixedArrStr", "doubleFixedArrStr", Function, "view", false, false, []Argument{{"str", String, false}, {"fixedArr1", Uint256Arr2, false}, {"fixedArr2", Uint256Arr3, false}}, nil),
 	"multipleMixedArrStr": NewMethod("multipleMixedArrStr", "multipleMixedArrStr", Function, "view", false, false, []Argument{{"str", String, false}, {"fixedArr1", Uint256Arr2, false}, {"dynArr", Uint256Arr, false}, {"fixedArr2", Uint256Arr3, false}}, nil),
+	"overloadedNames":     NewMethod("overloadedNames", "overloadedNames", Function, "view", false, false, []Argument{{"f", TupleF, false}}, nil),
 }
 
 func TestReader(t *testing.T) {
@@ -116,7 +123,7 @@ func TestReader(t *testing.T) {
 
 	exp, err := JSON(strings.NewReader(jsondata))
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	for name, expM := range exp.Methods {
@@ -601,7 +608,7 @@ func TestInputFixedArrayAndVariableInputLength(t *testing.T) {
 	strvalue = common.RightPadBytes([]byte(strin), 32)
 	fixedarrin1value1 = common.LeftPadBytes(fixedarrin1[0].Bytes(), 32)
 	fixedarrin1value2 = common.LeftPadBytes(fixedarrin1[1].Bytes(), 32)
-	dynarroffset = U256(big.NewInt(int64(256 + ((len(strin)/32)+1)*32)))
+	dynarroffset = math.U256Bytes(big.NewInt(int64(256 + ((len(strin)/32)+1)*32)))
 	dynarrlength = make([]byte, 32)
 	dynarrlength[31] = byte(len(dynarrin))
 	dynarrinvalue1 = common.LeftPadBytes(dynarrin[0].Bytes(), 32)
