@@ -78,9 +78,9 @@ var PrecompiledContractsIstanbul = map[common.Address]PrecompiledContract{
 	common.BytesToAddress([]byte{9}): &blake2F{},
 }
 
-// PrecompiledContractsBerlin contains the default set of pre-compiled Ethereum
-// contracts used in the Berlin release.
-var PrecompiledContractsBerlin = map[common.Address]PrecompiledContract{
+// PrecompiledContractsYoloV1 contains the default set of pre-compiled Ethereum
+// contracts used in the Yolo v1 test release.
+var PrecompiledContractsYoloV1 = map[common.Address]PrecompiledContract{
 	common.BytesToAddress([]byte{1}):  &ecrecover{},
 	common.BytesToAddress([]byte{2}):  &sha256hash{},
 	common.BytesToAddress([]byte{3}):  &ripemd160hash{},
@@ -620,11 +620,12 @@ func (c *bls12381G1MultiExp) RequiredGas(input []byte) uint64 {
 		return 0
 	}
 	// Lookup discount value for G1 point, scalar value pair length
-	maxDiscountLen := len(params.Bls12381MultiExpDiscountTable)
-	if k > maxDiscountLen {
-		k = maxDiscountLen
+	var discount uint64
+	if dLen := len(params.Bls12381MultiExpDiscountTable); k < dLen {
+		discount = params.Bls12381MultiExpDiscountTable[k-1]
+	} else {
+		discount = params.Bls12381MultiExpDiscountTable[dLen-1]
 	}
-	discount := params.Bls12381MultiExpDiscountTable[k-1]
 	// Calculate gas and return the result
 	return (uint64(k) * params.Bls12381G1MulGas * discount) / 1000
 }
@@ -750,11 +751,12 @@ func (c *bls12381G2MultiExp) RequiredGas(input []byte) uint64 {
 		return 0
 	}
 	// Lookup discount value for G2 point, scalar value pair length
-	maxDiscountLen := len(params.Bls12381MultiExpDiscountTable)
-	if k > maxDiscountLen {
-		k = maxDiscountLen
+	var discount uint64
+	if dLen := len(params.Bls12381MultiExpDiscountTable); k < dLen {
+		discount = params.Bls12381MultiExpDiscountTable[k-1]
+	} else {
+		discount = params.Bls12381MultiExpDiscountTable[dLen-1]
 	}
-	discount := params.Bls12381MultiExpDiscountTable[k-1]
 	// Calculate gas and return the result
 	return (uint64(k) * params.Bls12381G2MulGas * discount) / 1000
 }
@@ -904,7 +906,7 @@ func (c *bls12381MapG1) Run(input []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	// Encode the G1 point to 256 bytes
+	// Encode the G1 point to 128 bytes
 	return g.EncodePoint(r), nil
 }
 
